@@ -202,7 +202,7 @@ function openPlanModal() {
   overlay.innerHTML = `
     <div class="card p-6 w-full fadeIn" style="max-width: 420px;">
       <p class="text-lg font-extrabold text-slate-900">🗓️ Bugünkü Planını Ayarla</p>
-      <p class="text-sm text-slate-500 mt-1">Çalışma saatlerini seç, programını buna göre oluşturalım.</p>
+      <p class="text-sm text-slate-500 mt-1">Seçtiğin saat aralığının tamamı, farklı derslerle kapsamlı şekilde doldurulur.</p>
 
       <div class="grid grid-cols-2 gap-3 mt-5">
         <div>
@@ -216,8 +216,9 @@ function openPlanModal() {
       </div>
 
       <div class="mt-3">
-        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Günlük Çalışma Süresi (dk)</label>
-        <input id="plan-daily-minutes" type="number" min="15" step="5" class="input" value="${minutes}" />
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Toplam Çalışma Süresi</label>
+        <input id="plan-daily-minutes" type="number" min="15" step="5" class="input" value="${minutes}" readonly style="background:#f8f9fb; color:#64748b;" />
+        <p class="text-xs text-slate-400 mt-1">Saat aralığından otomatik hesaplanır (en fazla 12 saat).</p>
       </div>
 
       <div class="grid grid-cols-2 gap-3 mt-5">
@@ -231,18 +232,25 @@ function openPlanModal() {
   const endInput = document.getElementById("plan-end-time");
   const minutesInput = document.getElementById("plan-daily-minutes");
 
-  // Saat aralığı değiştikçe süreyi otomatik hesapla — kullanıcı yine de
-  // isterse süreyi elle üzerine yazabilir.
+  // Saat aralığı değiştikçe toplam süreyi otomatik hesapla. Bu alan artık
+  // salt-okunur (readonly) — backend (generate_study_plan) da toplam süreyi
+  // ARTIK ÖNCELİKLE bu saat aralığından hesaplıyor, bu yüzden ikisinin
+  // birbirinden kopması (ör. saat değiştirilip süre elle değiştirilmemesi
+  // gibi) mümkün değil; gösterge her zaman gerçek plan süresini yansıtır.
+  // "input" olayı, mobil zaman seçicilerde "change"den daha güvenilir tetiklenir.
   function syncMinutesFromRange() {
     const [sh, sm] = (startInput.value || "").split(":").map(Number);
     const [eh, em] = (endInput.value || "").split(":").map(Number);
     if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return;
     let diff = (eh * 60 + em) - (sh * 60 + sm);
     if (diff <= 0) diff += 24 * 60; // gece yarısını geçen aralık
-    minutesInput.value = diff;
+    minutesInput.value = Math.min(diff, 720); // backend de 12 saatte sınırlıyor
   }
+  startInput.addEventListener("input", syncMinutesFromRange);
+  endInput.addEventListener("input", syncMinutesFromRange);
   startInput.addEventListener("change", syncMinutesFromRange);
   endInput.addEventListener("change", syncMinutesFromRange);
+  syncMinutesFromRange();
 
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closePlanModal(); });
   document.getElementById("plan-modal-cancel").addEventListener("click", closePlanModal);
