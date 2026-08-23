@@ -9,6 +9,7 @@ if (!auth) {
   // requireAuth already redirected.
   throw new Error("not authenticated");
 }
+const { user, student } = auth;
 
 mountNav("dashboard.html");
 
@@ -169,17 +170,132 @@ function renderTodayPriority(data) {
     </div>`;
 }
 
-async function handleGeneratePlan(btn) {
-  btn.disabled = true;
-  btn.textContent = "Oluşturuluyor...";
-  const { error } = await supabase.rpc("generate_study_plan", {});
-  if (error) {
-    toast(error.message || "Plan oluşturulamadı.", "error");
-    btn.disabled = false;
-    btn.textContent = "Bugünkü Planı Oluştur";
+// ---- Günlük plan ayar modalı ----
+// Kullanıcı "Bugünkü Planı Oluştur"a bastığında planı doğrudan varsayılan
+// saatlerle oluşturmak yerine, önce başlangıç/bitiş saatini ve günlük çalışma
+// süresini seçebileceği bir ekran (modal) açıyoruz. Buradaki değerler
+// students.preferred_start_time / preferred_end_time / daily_study_minutes
+// alanlarına kaydediliyor — generate_study_plan RPC'si zaten programı bu
+// alanlara göre oluşturuyor (bkz. 20240601000050_study_planner.sql).
+function closePlanModal() {
+  const el = document.getElementById("plan-modal-overlay");
+  if (el) el.remove();
+  document.removeEventListener("keydown", handlePlanModalKeydown);
+}
+
+function handlePlanModalKeydown(e) {
+  if (e.key === "Escape") closePlanModal();
+}
+
+function openPlanModal() {
+  closePlanModal();
+
+  const start = (student?.preferred_start_time || "19:00").slice(0, 5);
+  const end = (student?.preferred_end_time || "21:00").slice(0, 5);
+  const minutes = student?.daily_study_minutes ?? 120;
+
+  const overlay = document.createElement("div");
+  overlay.id = "plan-modal-overlay";
+  overlay.className = "fixed inset-0 z-50 flex items-center justify-center p-4";
+  overlay.style.background = "rgba(15,10,50,.45)";
+  overlay.style.backdropFilter = "blur(3px)";
+  overlay.innerHTML = `
+    <div class="card p-6 w-full fadeIn" style="max-width: 420px;">
+      <p class="text-lg font-extrabold text-slate-900">🗓️ Bugünkü Planını Ayarla</p>
+      <p class="text-sm text-slate-500 mt-1">Çalışma saatlerini seç, programını buna göre oluşturalım.</p>
+
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1.5">Başlangıç Saati</label>
+          <input id="plan-start-time" type="time" class="input" value="${start}" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1.5">Bitiş Saati</label>
+          <input id="plan-end-time" type="time" class="input" value="${end}" />
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Günlük Çalışma Süresi (dk)</label>
+        <input id="plan-daily-minutes" type="number" min="15" step="5" class="input" value="${minutes}" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <button id="plan-modal-cancel" type="button" class="btn-secondary py-2.5">Vazgeç</button>
+        <button id="plan-modal-submit" type="button" class="btn-primary py-2.5">Planı Oluştur</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const startInput = document.getElementById("plan-start-time");
+  const endInput = document.getElementById("plan-end-time");
+  const minutesInput = document.getElementById("plan-daily-minutes");
+
+  // Saat aralığı değiştikçe süreyi otomatik hesapla — kullanıcı yine de
+  // isterse süreyi elle üzerine yazabilir.
+  function syncMinutesFromRange() {
+    const [sh, sm] = (startInput.value || "").split(":").map(Number);
+    const [eh, em] = (endInput.value || "").split(":").map(Number);
+    if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return;
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff <= 0) diff += 24 * 60; // gece yarısını geçen aralık
+    minutesInput.value = diff;
+  }
+  startInput.addEventListener("change", syncMinutesFromRange);
+  endInput.addEventListener("change", syncMinutesFromRange);
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closePlanModal(); });
+  document.getElementById("plan-modal-cancel").addEventListener("click", closePlanModal);
+  document.getElementById("plan-modal-submit").addEventListener("click", (e) => submitPlanModal(e.currentTarget));
+  document.addEventListener("keydown", handlePlanModalKeydown);
+  startInput.focus();
+}
+
+async function submitPlanModal(btn) {
+  const preferred_start_time = document.getElementById("plan-start-time").value;
+  const preferred_end_time = document.getElementById("plan-end-time").value;
+  const daily_study_minutes = Number(document.getElementById("plan-daily-minutes").value);
+
+  if (!preferred_start_time || !preferred_end_time) {
+    toast("Lütfen başlangıç ve bitiş saatini seç.", "error");
     return;
   }
+  if (!daily_study_minutes || daily_study_minutes < 15) {
+    toast("Günlük çalışma süresi en az 15 dakika olmalı.", "error");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Oluşturuluyor...";
+
+  const { error: studentErr } = await supabase
+    .from("students")
+    .update({ preferred_start_time, preferred_end_time, daily_study_minutes })
+    .eq("user_id", user.id);
+
+  if (studentErr) {
+    toast(studentErr.message || "Saatler kaydedilemedi.", "error");
+    btn.disabled = false;
+    btn.textContent = "Planı Oluştur";
+    return;
+  }
+
+  const { error: planErr } = await supabase.rpc("generate_study_plan", {});
+  if (planErr) {
+    toast(planErr.message || "Plan oluşturulamadı.", "error");
+    btn.disabled = false;
+    btn.textContent = "Planı Oluştur";
+    return;
+  }
+
+  if (student) {
+    student.preferred_start_time = preferred_start_time;
+    student.preferred_end_time = preferred_end_time;
+    student.daily_study_minutes = daily_study_minutes;
+  }
+
   toast("Plan oluşturuldu!", "success");
+  closePlanModal();
   window.location.reload();
 }
 
@@ -192,16 +308,19 @@ function renderScheduleTimeline(data) {
       <div class="card p-6 text-center">
         <div class="text-3xl mb-2">🗓️</div>
         <p class="font-semibold text-slate-700">Bugün için henüz bir plan yok.</p>
-        <p class="text-sm text-slate-400 mt-1">Hemen bir çalışma planı oluşturalım.</p>
+        <p class="text-sm text-slate-400 mt-1">Çalışma saatlerini seç, hemen bir plan oluşturalım.</p>
         <button id="generate-plan-btn" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Bugünkü Planı Oluştur</button>
       </div>`;
-    document.getElementById("generate-plan-btn").addEventListener("click", (e) => handleGeneratePlan(e.currentTarget));
+    document.getElementById("generate-plan-btn").addEventListener("click", () => openPlanModal());
     return;
   }
 
   el.innerHTML = `
     <div class="card p-5">
-      <p class="font-bold text-slate-900 mb-4">Bugünün Programı</p>
+      <div class="flex items-center justify-between mb-4">
+        <p class="font-bold text-slate-900">Bugünün Programı</p>
+        <button id="replan-btn" class="text-xs font-semibold text-indigo-600 hover:underline">⚙️ Saatleri Ayarla</button>
+      </div>
       <div class="space-y-0">
         ${sessions.map((s, i) => `
           <div class="flex gap-3 relative">
@@ -234,6 +353,7 @@ function renderScheduleTimeline(data) {
         `).join("")}
       </div>
     </div>`;
+  document.getElementById("replan-btn").addEventListener("click", () => openPlanModal());
 }
 
 function renderSuccessRate(data) {
