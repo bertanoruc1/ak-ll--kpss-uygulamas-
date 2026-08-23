@@ -6,6 +6,10 @@ import { toast, escapeHtml, scoreColor, LEVEL_LABELS } from "./ui.js";
 const auth = await requireAuth();
 if (!auth) throw new Error("not authenticated");
 const { user, student } = auth;
+// Savunma amaçlı: student satırı her hangi bir nedenle hâlâ eksikse (ör. veritabanı
+// migration'ları henüz push edilmemişse), sayfa sonsuz iskelet (skeleton) halinde
+// takılı kalmak yerine makul bir varsayılanla devam etsin.
+const studentExamType = student?.exam_type || "kpss_lisans";
 
 mountNav("subjects.html");
 
@@ -51,7 +55,7 @@ async function loadSubjectsList() {
   const { data: subjects, error: subjError } = await supabase
     .from("subjects")
     .select("*")
-    .eq("exam_type", student.exam_type)
+    .eq("exam_type", studentExamType)
     .order("order_index");
 
   if (subjError) {
@@ -202,11 +206,19 @@ document.getElementById("retry-btn").addEventListener("click", () => {
   init();
 });
 
-function init() {
-  if (subjectId) {
-    loadTopicsForSubject(subjectId);
-  } else {
-    loadSubjectsList();
+async function init() {
+  try {
+    if (subjectId) {
+      await loadTopicsForSubject(subjectId);
+    } else {
+      await loadSubjectsList();
+    }
+  } catch (e) {
+    // Beklenmeyen bir hata (ör. bir üstteki savunma da yetmediyse) sayfayı sonsuza
+    // kadar iskelet halinde bırakmak yerine en azından görünür bir hata haline getirir.
+    console.error("subjects.js init failed:", e);
+    toast("Dersler yüklenemedi, tekrar dener misin?", "error");
+    showError();
   }
 }
 

@@ -17,7 +17,14 @@ export async function requireAuth({ requireAdmin = false, requireOnboarding = tr
   // olmayan hesaplar) her sayfa yüklemesinde otomatik tamamla. Bu olmadan
   // aşağıdaki select'ler null dönüyor ve student/profile'a doğrudan erişen
   // sayfalar (ör. Dersler) sessizce kırılıyordu.
-  await supabase.rpc("ensure_my_profile");
+  // NOT: hata burada YUTULMUYOR — konsola yazılıyor. Bu RPC'nin "function
+  // does not exist" hatası vermesinin en olası nedeni, ilgili migration'ın
+  // (20240601000180 / 20240601000190) henüz `supabase db push` ile
+  // veritabanına uygulanmamış olmasıdır.
+  const { error: healError } = await supabase.rpc("ensure_my_profile");
+  if (healError) {
+    console.error("ensure_my_profile RPC failed — muhtemelen migration'lar henüz veritabanına push edilmedi:", healError);
+  }
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   const { data: student } = await supabase.from("students").select("*").eq("user_id", user.id).single();

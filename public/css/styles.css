@@ -210,8 +210,13 @@ a.card:hover, .card-hover:hover {
 @media (prefers-reduced-motion: reduce) {
   .ambient-orb, .auth-blob { animation: none; }
 }
-/* app-shell content sits above the ambient layer; cards already have solid backgrounds */
-.app-shell, #bottomnav { position: relative; z-index: 1; }
+/* app-shell content sits above the ambient layer; cards already have solid backgrounds.
+   NOTE: #bottomnav is deliberately NOT included here — it already has `position: fixed`
+   (set above) and `z-index: 40`, both of which already put it above the ambient layer.
+   Adding `position: relative` to it here previously OVERRODE that `position: fixed`
+   (same specificity, later rule wins) and broke the mobile bottom nav — it stopped
+   sticking to the bottom of the viewport and rendered inline wherever the DOM put it. */
+.app-shell { position: relative; z-index: 1; }
 
 /* ============ MICRO-INTERACTIONS ============ */
 @keyframes countUpGlow {
