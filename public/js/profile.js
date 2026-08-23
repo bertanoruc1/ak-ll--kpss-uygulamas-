@@ -34,7 +34,7 @@ function render(student, gami) {
     <div class="space-y-5 fadeIn">
       <!-- Avatar + kimlik -->
       <div class="card p-6 flex items-center gap-4">
-        <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold text-white shrink-0" style="background: linear-gradient(135deg, #6366f1, #7c3aed);">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold text-white shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">
           ${escapeHtml(initials(name, email))}
         </div>
         <div class="min-w-0">

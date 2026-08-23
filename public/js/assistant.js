@@ -38,7 +38,7 @@ function bubbleHtml(msg) {
   }
   return `
     <div class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #6366f1, #7c3aed);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">🤖</div>
       <div class="max-w-[80%] bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-slate-700 shadow-sm">
         ${escapeHtml(msg.text)}
       </div>
@@ -48,7 +48,7 @@ function bubbleHtml(msg) {
 function typingHtml() {
   return `
     <div id="typing-indicator" class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #6366f1, #7c3aed);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">🤖</div>
       <div class="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>

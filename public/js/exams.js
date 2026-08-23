@@ -47,7 +47,7 @@ function examCard(exam, isOwn) {
         ${isOwn ? `<span class="badge bg-violet-50 text-violet-700 shrink-0">Senin Sınavın</span>` : ""}
       </div>
 
-      <div class="mt-3 ${exam.exam_date ? "rounded-xl p-4 text-white" : ""}" ${exam.exam_date ? `style="background: linear-gradient(135deg, #6366f1, #7c3aed);"` : ""}>
+      <div class="mt-3 ${exam.exam_date ? "rounded-xl p-4 text-white" : ""}" ${exam.exam_date ? `style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);"` : ""}>
         ${daysLeftLabel(exam.exam_date)}
       </div>
 

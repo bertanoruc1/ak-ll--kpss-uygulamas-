@@ -54,7 +54,7 @@ function renderGreeting(data) {
     <p class="text-sm text-slate-500 mt-0.5">${timeOfDayGreeting()}, bugün seni bekleyenlere göz at.</p>
     <div class="flex items-center gap-2 mt-2.5">
       <span class="badge bg-orange-50 text-orange-700">🔥 ${data.streak ?? 0} gün seri</span>
-      <span class="badge bg-violet-50 text-violet-700">✨ ${data.xp ?? 0} XP</span>
+      <span class="badge badge-gold">✨ ${data.xp ?? 0} XP</span>
       <span class="badge bg-indigo-50 text-indigo-700">🏅 Seviye ${data.level ?? 1}</span>
     </div>
   `;
@@ -81,9 +81,10 @@ function renderExamCountdown(data) {
     return;
   }
   el.innerHTML = `
-    <div class="rounded-2xl p-6 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #6366f1, #7c3aed);">
+    <div class="rounded-2xl p-6 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7); box-shadow: 0 20px 44px -12px rgba(76,29,149,.45);">
+      <div class="absolute inset-0" style="background: radial-gradient(220px 160px at 100% 0%, rgba(255,255,255,.14), transparent 70%);"></div>
       <div class="relative z-10">
-        <p class="text-sm font-medium text-indigo-100">${escapeHtml(exam.name)}</p>
+        <p class="text-sm font-medium text-indigo-100 tracking-wide">${escapeHtml(exam.name)}</p>
         <div class="flex items-end gap-2 mt-1">
           <span class="text-5xl font-extrabold leading-none">${exam.days_left}</span>
           <span class="text-lg font-semibold mb-1">gün kaldı</span>
