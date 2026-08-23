@@ -47,55 +47,63 @@ const STATUS_CLASSES = {
   skipped: "bg-slate-100 text-slate-500",
 };
 
-function renderGreeting(data) {
-  const box = document.getElementById("greeting-box");
-  box.innerHTML = `
-    <h1 class="text-2xl font-extrabold text-slate-900">Merhaba, ${escapeHtml(data.greeting_name || "Öğrenci")}!</h1>
-    <p class="text-sm text-slate-500 mt-0.5">${timeOfDayGreeting()}, bugün seni bekleyenlere göz at.</p>
-    <div class="flex items-center gap-2 mt-2.5">
-      <span class="badge bg-orange-50 text-orange-700">🔥 <span id="stat-streak">0</span> gün seri</span>
-      <span class="badge badge-gold">✨ <span id="stat-xp">0</span> XP</span>
-      <span class="badge bg-indigo-50 text-indigo-700">🏅 Seviye ${data.level ?? 1}</span>
-    </div>
-  `;
+function renderHero(data) {
+  const el = document.getElementById("hero-card");
+  const exam = data.exam;
+  const notifBadgeHtml = () => {
+    const unread = data.unread_notifications || 0;
+    if (!unread) return "";
+    return `<span id="notif-badge" class="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" style="box-shadow: 0 0 0 2px rgba(76,29,149,.55);">${unread > 99 ? "99+" : unread}</span>`;
+  };
+
+  el.innerHTML = `
+    <div class="rounded-2xl p-6 sm:p-7 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #3730a3, #6d28d9 45%, #a21caf 100%); box-shadow: 0 24px 56px -16px rgba(76,29,149,.5);">
+      <div class="absolute inset-0" style="background: radial-gradient(340px 220px at 105% -10%, rgba(255,255,255,.16), transparent 60%), radial-gradient(260px 200px at -10% 110%, rgba(255,255,255,.08), transparent 55%);"></div>
+      <div class="absolute -right-8 -bottom-10 text-9xl opacity-[0.08] select-none" style="pointer-events:none;">🎯</div>
+
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold text-indigo-200 uppercase tracking-wide">${timeOfDayGreeting()}</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold leading-tight mt-0.5">Merhaba, ${escapeHtml(data.greeting_name || "Öğrenci")} 👋</h1>
+          </div>
+          <a href="notifications.html" class="relative shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl transition" style="background: rgba(255,255,255,.12); backdrop-filter: blur(6px);">
+            🔔${notifBadgeHtml()}
+          </a>
+        </div>
+
+        <div class="flex items-center gap-2 mt-4 flex-wrap">
+          <span class="badge" style="background: rgba(255,255,255,.14); color: #fff;">🔥 <span id="stat-streak">0</span> gün seri</span>
+          <span class="badge badge-gold">✨ <span id="stat-xp">0</span> XP</span>
+          <span class="badge" style="background: rgba(255,255,255,.14); color: #fff;">🏅 Seviye ${data.level ?? 1}</span>
+        </div>
+
+        <div class="mt-5 pt-5" style="border-top: 1px solid rgba(255,255,255,.14);">
+          ${exam ? `
+            <div class="flex items-end justify-between gap-3 flex-wrap">
+              <div>
+                <p class="text-xs font-medium text-indigo-200 tracking-wide">${escapeHtml(exam.name)}</p>
+                <div class="flex items-end gap-2 mt-1">
+                  <span id="stat-days-left" class="text-5xl font-extrabold leading-none">0</span>
+                  <span class="text-base font-semibold mb-1 text-indigo-100">gün kaldı</span>
+                </div>
+              </div>
+              <p class="text-xs text-indigo-200">${fmtDate(exam.exam_date)}</p>
+            </div>` : `
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">📅</span>
+              <div>
+                <p class="text-sm font-semibold">Sınav takvimi henüz belirlenmedi</p>
+                <a href="exams.html" class="text-xs font-semibold text-indigo-200 hover:underline">Sınav Takvimine Git →</a>
+              </div>
+            </div>`}
+        </div>
+      </div>
+    </div>`;
+
   countUp(document.getElementById("stat-streak"), data.streak ?? 0, { duration: 700 });
   countUp(document.getElementById("stat-xp"), data.xp ?? 0, { duration: 1100 });
-
-  const notifBadge = document.getElementById("notif-badge");
-  const unread = data.unread_notifications || 0;
-  if (unread > 0) {
-    notifBadge.textContent = unread > 99 ? "99+" : String(unread);
-    notifBadge.classList.remove("hidden");
-  }
-}
-
-function renderExamCountdown(data) {
-  const el = document.getElementById("exam-countdown");
-  const exam = data.exam;
-  if (!exam) {
-    el.innerHTML = `
-      <div class="card p-6 text-center">
-        <div class="text-3xl mb-2">📅</div>
-        <p class="font-semibold text-slate-700">Sınav takvimi henüz belirlenmedi</p>
-        <p class="text-sm text-slate-400 mt-1">Sınav tarihini belirlemek için sınav takvimini incele.</p>
-        <a href="exams.html" class="btn-secondary inline-block mt-4 px-4 py-2 text-sm">Sınav Takvimine Git</a>
-      </div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div class="rounded-2xl p-6 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7); box-shadow: 0 20px 44px -12px rgba(76,29,149,.45);">
-      <div class="absolute inset-0" style="background: radial-gradient(220px 160px at 100% 0%, rgba(255,255,255,.14), transparent 70%);"></div>
-      <div class="relative z-10">
-        <p class="text-sm font-medium text-indigo-100 tracking-wide">${escapeHtml(exam.name)}</p>
-        <div class="flex items-end gap-2 mt-1">
-          <span id="stat-days-left" class="text-5xl font-extrabold leading-none">0</span>
-          <span class="text-lg font-semibold mb-1">gün kaldı</span>
-        </div>
-        <p class="text-sm text-indigo-100 mt-2">${fmtDate(exam.exam_date)}</p>
-      </div>
-      <div class="absolute -right-6 -bottom-6 text-8xl opacity-20">🎯</div>
-    </div>`;
-  countUp(document.getElementById("stat-days-left"), exam.days_left ?? 0, { duration: 1000 });
+  if (exam) countUp(document.getElementById("stat-days-left"), exam.days_left ?? 0, { duration: 1000 });
 }
 
 function renderTopNews(data) {
@@ -268,7 +276,7 @@ function renderWeeklyProgress(data) {
 
 function showErrorState() {
   document.getElementById("error-state").classList.remove("hidden");
-  ["greeting-box", "exam-countdown", "top-news", "today-status", "today-priority", "schedule-timeline", "success-rate", "weekly-progress"]
+  ["hero-card", "top-news", "today-status", "today-priority", "schedule-timeline", "success-rate", "weekly-progress"]
     .forEach(id => { document.getElementById(id).innerHTML = ""; });
 }
 
@@ -280,8 +288,7 @@ async function loadHomepage() {
     showErrorState();
     return;
   }
-  renderGreeting(data);
-  renderExamCountdown(data);
+  renderHero(data);
   renderTopNews(data);
   renderTodayStatus(data);
   renderTodayPriority(data);

@@ -12,6 +12,13 @@ export async function requireAuth({ requireAdmin = false, requireOnboarding = tr
   }
   const user = session.user;
 
+  // Eksik/"yetim" profil satırlarını (ör. şema sıfırlaması sonrası
+  // auth.users'ta var olup public.profiles/students/user_gamification'da
+  // olmayan hesaplar) her sayfa yüklemesinde otomatik tamamla. Bu olmadan
+  // aşağıdaki select'ler null dönüyor ve student/profile'a doğrudan erişen
+  // sayfalar (ör. Dersler) sessizce kırılıyordu.
+  await supabase.rpc("ensure_my_profile");
+
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   const { data: student } = await supabase.from("students").select("*").eq("user_id", user.id).single();
 

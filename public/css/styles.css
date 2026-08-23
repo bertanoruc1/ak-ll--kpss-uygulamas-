@@ -26,6 +26,13 @@
 
 html { scroll-behavior: smooth; }
 
+/* Tailwind CDN normally ships a Preflight reset that strips the browser's
+   default underline/color from <a> tags. The hand-rolled static CSS doesn't
+   include Preflight, so every link-styled element (nav items, card links,
+   CTA buttons built as <a>) was showing a stray default underline — add the
+   same baseline reset here. .hover\:underline still works (higher specificity). */
+a { text-decoration: none; color: inherit; }
+
 h1, h2, h3, .font-extrabold { letter-spacing: -0.015em; }
 
 body {
@@ -49,9 +56,12 @@ body {
 .app-shell { display: flex; min-height: 100vh; }
 
 #sidebar {
-  width: 264px; flex-shrink: 0; background: rgba(255,255,255,.85); backdrop-filter: blur(14px);
-  border-right: 1px solid var(--border);
-  position: sticky; top: 0; height: 100vh;
+  width: 272px; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow: hidden;
+  background:
+    radial-gradient(560px 320px at 100% 0%, rgba(168,85,247,.35), transparent 60%),
+    radial-gradient(420px 280px at 0% 100%, rgba(99,102,241,.28), transparent 55%),
+    linear-gradient(180deg, #1e1b4b 0%, #241f5c 55%, #1a1642 100%);
+  box-shadow: 4px 0 32px -8px rgba(15,10,50,.35);
 }
 @media (max-width: 767px) { #sidebar { display: none; } }
 
@@ -65,27 +75,37 @@ body {
 }
 @media (min-width: 768px) { #bottomnav { display: none; } }
 
-/* Sidebar nav items */
-.nav-brand { display: flex; align-items: center; gap: .6rem; }
+/* Sidebar nav items — koyu cam (dark glass) zemin üzerinde */
+.nav-brand { display: flex; align-items: center; gap: .65rem; position: relative; z-index: 1; }
 .nav-brand-mark {
-  width: 38px; height: 38px; border-radius: .85rem; background: var(--brand-grad-deep);
-  display: flex; align-items: center; justify-content: center; font-size: 1.15rem;
-  box-shadow: 0 6px 16px rgba(76,29,149,.4), inset 0 1px 0 rgba(255,255,255,.2);
+  width: 40px; height: 40px; border-radius: .9rem;
+  background: linear-gradient(135deg, #818cf8, #a855f7 55%, #f0abfc);
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  box-shadow: 0 8px 20px rgba(168,85,247,.4), inset 0 1px 0 rgba(255,255,255,.35);
 }
+#sidebar .nav-brand .font-extrabold { color: #fff; }
+#sidebar .nav-brand .text-indigo-400 { color: #c4b5fd; }
+
 .nav-link {
-  display: flex; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: .85rem;
-  font-size: .875rem; font-weight: 600; color: var(--ink-600); transition: all .15s ease;
-  position: relative;
+  display: flex; align-items: center; gap: .75rem; padding: .65rem .8rem; border-radius: .85rem;
+  font-size: .875rem; font-weight: 600; color: #c7c5e8; transition: all .18s ease;
+  position: relative; z-index: 1;
 }
-.nav-link:hover { background: #f1f2fb; color: var(--ink-900); }
+.nav-link:hover { background: rgba(255,255,255,.07); color: #fff; }
 .nav-link.active {
-  background: var(--brand-grad-deep); color: #fff; box-shadow: 0 6px 16px rgba(76,29,149,.35);
+  background: linear-gradient(135deg, rgba(129,140,248,.9), rgba(168,85,247,.9) 60%, rgba(240,171,252,.85));
+  color: #fff; box-shadow: 0 8px 20px -4px rgba(168,85,247,.5), inset 0 1px 0 rgba(255,255,255,.25);
 }
 .nav-link .nav-icon-chip {
   width: 28px; height: 28px; border-radius: .6rem; display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; background: rgba(99,102,241,.08); flex-shrink: 0; transition: background .15s;
+  font-size: 1rem; background: rgba(255,255,255,.06); flex-shrink: 0; transition: background .15s;
 }
-.nav-link.active .nav-icon-chip { background: rgba(255,255,255,.18); }
+.nav-link:hover .nav-icon-chip { background: rgba(255,255,255,.12); }
+.nav-link.active .nav-icon-chip { background: rgba(255,255,255,.2); }
+
+#sidebar .border-t { border-color: rgba(255,255,255,.08) !important; }
+#sidebar #sidebar-signout { color: #fca5a5; }
+#sidebar #sidebar-signout:hover { background: rgba(244,63,94,.12); color: #fecaca; }
 
 .bottom-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: .5rem 0; font-size: .68rem; font-weight: 600; color: var(--ink-400); position: relative; transition: color .15s; }
 .bottom-link.active { color: var(--brand-1); }
