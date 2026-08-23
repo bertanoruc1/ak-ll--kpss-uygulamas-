@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
 import { mountNav } from "./nav.js";
-import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS, DIFFICULTY_LABELS, DIFFICULTY_COLORS } from "./ui.js";
+import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js";
 
 const auth = await requireAuth();
 if (!auth) throw new Error("not authenticated");
@@ -113,9 +113,8 @@ function render() {
 
       <div id="repetition-card" class="mt-4"></div>
 
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <a href="practice.html?topic=${topic.id}" class="btn-primary text-center py-3">📝 Soru Çöz</a>
-        <button id="mini-test-btn" class="btn-secondary py-3">🧪 Mini Test Başlat</button>
+      <div class="mt-4">
+        <a href="practice.html?topic=${topic.id}" class="btn-primary text-center py-3 block">📝 Soru Çöz</a>
       </div>
 
       <div class="card p-5 mt-5">
@@ -146,15 +145,12 @@ function render() {
 
       <div class="card p-5 mt-4 text-center" style="background: linear-gradient(135deg, #eef2ff, #f5f3ff); border: 1px solid #e0e7ff;">
         <p class="font-bold text-slate-900 mb-1">Bu konuyu öğrendiğini düşünüyor musun?</p>
-        <p class="text-xs text-slate-500 mb-3">Öz değerlendirmen, bilgi skoruna küçük bir katkı sağlar.</p>
-        <button id="understood-btn" class="btn-primary px-5 py-2.5">✅ Bu konuyu anladım</button>
+        <p class="text-xs text-slate-500 mb-3">Onayladığında bu konuyla ilgili sorularla kendini hemen test edebilirsin.</p>
+        <button id="understood-btn" class="btn-primary px-5 py-2.5">✅ Bu konuyu anladım, soruları göster</button>
       </div>
-
-      <div id="mini-test-area" class="mt-4"></div>
     </div>`;
 
   renderRepetitionCard();
-  document.getElementById("mini-test-btn").addEventListener("click", startMiniTest);
   document.getElementById("understood-btn").addEventListener("click", handleUnderstood);
   const videoBtn = document.getElementById("video-watched-btn");
   if (videoBtn) videoBtn.addEventListener("click", handleVideoWatched);
@@ -200,13 +196,14 @@ async function handleUnderstood() {
   if (error) {
     toast(error.message || "Kaydedilemedi.", "error");
     btn.disabled = false;
-    btn.textContent = "✅ Bu konuyu anladım";
+    btn.textContent = "✅ Bu konuyu anladım, soruları göster";
     return;
   }
-  toast("Öz değerlendirme kaydedildi", "success");
-  const { data: tp } = await supabase.from("topic_progress").select("*").eq("user_id", user.id).eq("topic_id", topicId).maybeSingle();
-  progress = tp;
-  render();
+  toast("Öz değerlendirme kaydedildi, sorulara yönlendiriliyorsun...", "success");
+  // Kullanıcı "anladım" dediğinde en doğru sonraki adım, o konuyla ilgili
+  // sorularla kendini hemen test etmesi — bu yüzden burada aynı sayfayı yeniden
+  // render etmek yerine doğrudan practice sayfasına yönlendiriyoruz.
+  window.location.href = `practice.html?topic=${topicId}`;
 }
 
 async function handleVideoWatched() {
@@ -222,113 +219,6 @@ async function handleVideoWatched() {
   }
   toast("Video izlendi olarak işaretlendi", "success");
   btn.textContent = "✓ İzlendi";
-}
-
-// ---- Mini Test flow ----
-const MINI_TEST_COUNT = 5;
-
-async function startMiniTest() {
-  const area = document.getElementById("mini-test-area");
-  area.innerHTML = `
-    <div class="card p-6 text-center">
-      <div class="skeleton h-6 w-40 mx-auto mb-2"></div>
-      <p class="text-sm text-slate-400 mt-2">Sorular hazırlanıyor...</p>
-    </div>`;
-  area.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  const questions = [];
-  const seenIds = new Set();
-  let attempts = 0;
-  while (questions.length < MINI_TEST_COUNT && attempts < MINI_TEST_COUNT * 3) {
-    attempts++;
-    const { data: q, error } = await supabase.rpc("get_next_question", { p_topic_id: topicId });
-    if (error || !q) break;
-    if (!seenIds.has(q.id)) {
-      seenIds.add(q.id);
-      questions.push(q);
-    }
-  }
-
-  if (questions.length === 0) {
-    area.innerHTML = `
-      <div class="card p-6 text-center">
-        <div class="text-3xl mb-2">🤷</div>
-        <p class="text-slate-600 font-medium">Bu konuda henüz soru eklenmedi.</p>
-      </div>`;
-    return;
-  }
-
-  runMiniTest(area, questions, 0, []);
-}
-
-function runMiniTest(area, questions, index, answers) {
-  if (index >= questions.length) {
-    finishMiniTest(area, answers);
-    return;
-  }
-
-  const q = questions[index];
-  const startedAt = Date.now();
-
-  area.innerHTML = `
-    <div class="card p-5 fadeIn">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-xs font-semibold text-slate-400">Mini Test · Soru ${index + 1}/${questions.length}</span>
-        <span class="badge" style="background:${DIFFICULTY_COLORS[q.difficulty] || "#94a3b8"}1a; color:${DIFFICULTY_COLORS[q.difficulty] || "#64748b"};">${DIFFICULTY_LABELS[q.difficulty] || q.difficulty || ""}</span>
-      </div>
-      ${q.image_url ? `<img src="${escapeHtml(q.image_url)}" alt="Soru görseli" class="rounded-xl mb-3 max-h-64 object-contain mx-auto" />` : ""}
-      <p class="font-semibold text-slate-900 leading-relaxed whitespace-pre-line">${escapeHtml(q.question_text)}</p>
-      <div class="space-y-2 mt-4">
-        ${(q.choices || []).map((c) => `
-          <button class="mini-choice-btn w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 transition text-sm font-medium text-slate-700" data-choice="${c.id}">
-            ${escapeHtml(c.choice_text)}
-          </button>`).join("")}
-      </div>
-    </div>`;
-
-  area.querySelectorAll(".mini-choice-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const timeSpent = Math.round((Date.now() - startedAt) / 1000);
-      answers.push({ question_id: q.id, choice_id: btn.dataset.choice, time_spent_seconds: timeSpent });
-      runMiniTest(area, questions, index + 1, answers);
-    });
-  });
-}
-
-async function finishMiniTest(area, answers) {
-  area.innerHTML = `
-    <div class="card p-6 text-center">
-      <div class="skeleton h-6 w-40 mx-auto mb-2"></div>
-      <p class="text-sm text-slate-400 mt-2">Sonuçlar hesaplanıyor...</p>
-    </div>`;
-
-  const { data, error } = await supabase.rpc("submit_mini_test", {
-    p_topic_id: topicId,
-    p_answers: answers,
-  });
-
-  if (error || !data) {
-    toast(error?.message || "Mini test gönderilemedi.", "error");
-    area.innerHTML = "";
-    return;
-  }
-
-  const pct = data.score != null ? Math.round(data.score) : Math.round((data.correct / data.total) * 100);
-  area.innerHTML = `
-    <div class="card p-6 text-center fadeIn">
-      <div class="text-4xl mb-2">🎉</div>
-      <p class="font-bold text-lg text-slate-900">Mini Test Tamamlandı!</p>
-      <p class="text-5xl font-extrabold mt-3" style="color:${scoreColor(pct)};">%${pct}</p>
-      <p class="text-sm text-slate-500 mt-2">${data.correct}/${data.total} doğru</p>
-      <button id="close-mini-test-btn" class="btn-secondary mt-5 px-5 py-2.5">Kapat</button>
-    </div>`;
-
-  document.getElementById("close-mini-test-btn").addEventListener("click", async () => {
-    area.innerHTML = "";
-    const { data: tp } = await supabase.from("topic_progress").select("*").eq("user_id", user.id).eq("topic_id", topicId).maybeSingle();
-    progress = tp;
-    render();
-  });
 }
 
 document.getElementById("retry-btn").addEventListener("click", loadTopic);
