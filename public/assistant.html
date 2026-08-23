@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Asistan · KPSS Akıllı</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/styles.css" />
+<style>
+  #chat-scroll { scrollbar-width: thin; }
+  .typing-dot { animation: typingBounce 1.2s infinite ease-in-out; }
+  .typing-dot:nth-child(2) { animation-delay: .15s; }
+  .typing-dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-4px); opacity: 1; } }
+</style>
+</head>
+<body class="bg-slate-50">
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <main class="main-content w-full flex flex-col" style="height: 100vh;">
+
+      <!-- Başlık -->
+      <div class="border-b border-slate-200 bg-white px-4 sm:px-6 py-4 shrink-0">
+        <h1 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">🤖 AI Asistan</h1>
+        <p class="text-sm text-slate-500 mt-0.5">Çalışma programın ve performansın hakkında soru sor.</p>
+      </div>
+
+      <!-- Sohbet alanı -->
+      <div id="chat-scroll" class="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-4">
+        <div id="chat-list" class="max-w-2xl mx-auto space-y-4"></div>
+      </div>
+
+      <!-- Alt giriş alanı -->
+      <div class="border-t border-slate-200 bg-white px-4 sm:px-6 py-3 shrink-0" style="padding-bottom: max(env(safe-area-inset-bottom), .75rem);">
+        <div class="max-w-2xl mx-auto">
+          <div id="chip-row" class="flex flex-wrap gap-2 mb-3"></div>
+          <form id="chat-form" class="flex items-center gap-2">
+            <input id="chat-input" type="text" class="input flex-1" placeholder="Bir şey sor..." autocomplete="off" />
+            <button type="submit" id="send-btn" class="btn-primary w-11 h-11 shrink-0 flex items-center justify-center text-lg">➤</button>
+          </form>
+        </div>
+      </div>
+    </main>
+    <nav id="bottomnav"></nav>
+  </div>
+
+  <script type="module" src="js/assistant.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profilini Oluştur · KPSS Akıllı</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div class="max-w-lg mx-auto p-4 sm:p-6 py-10">
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-2">👋</div>
+      <h1 class="text-xl font-extrabold text-slate-900">Sana özel bir çalışma planı hazırlayalım</h1>
+      <p class="text-sm text-slate-500 mt-1">Birkaç soru — sonra hemen başlayabilirsin.</p>
+    </div>
+
+    <form id="onboarding-form" class="card p-6 space-y-6">
+      <div>
+        <label class="text-sm font-semibold text-slate-800 block mb-2">Hangi sınava hazırlanıyorsun?</label>
+        <div id="exam-type-options" class="grid grid-cols-2 gap-2"></div>
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold text-slate-800 block mb-2">Hedef puanın (opsiyonel)</label>
+        <input id="target_score" type="number" step="0.01" class="input" placeholder="ör. 85" />
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold text-slate-800 block mb-2">Günde kaç dakika çalışabilirsin?</label>
+        <input id="daily_minutes" type="number" class="input" value="120" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-semibold text-slate-800 block mb-2">Başlangıç saati</label>
+          <input id="start_time" type="time" class="input" value="19:00" />
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-800 block mb-2">Bitiş saati</label>
+          <input id="end_time" type="time" class="input" value="21:00" />
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold text-slate-800 block mb-2">Bildirim sıklığı</label>
+        <select id="notif_freq" class="input">
+          <option value="low">Az</option>
+          <option value="normal" selected>Normal</option>
+          <option value="high">Sık</option>
+        </select>
+      </div>
+
+      <button type="submit" id="submit-btn" class="btn-primary w-full py-3">Planımı Oluştur</button>
+    </form>
+  </div>
+
+<script type="module">
+import { supabase } from "./js/supabaseClient.js";
+import { EXAM_TYPE_LABELS } from "./js/config.js";
+import { toast } from "./js/ui.js";
+
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = "login.html"; throw new Error("no auth"); }
+
+let selectedExamType = "kpss_lisans";
+const optionsBox = document.getElementById("exam-type-options");
+optionsBox.innerHTML = Object.entries(EXAM_TYPE_LABELS).map(([key, label]) => `
+  <button type="button" data-key="${key}" class="exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${key === selectedExamType ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">${label}</button>
+`).join("");
+
+optionsBox.querySelectorAll(".exam-type-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectedExamType = btn.dataset.key;
+    optionsBox.querySelectorAll(".exam-type-btn").forEach(b => {
+      const active = b.dataset.key === selectedExamType;
+      b.className = `exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${active ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`;
+    });
+  });
+});
+
+document.getElementById("onboarding-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("submit-btn");
+  btn.disabled = true; btn.textContent = "Hazırlanıyor...";
+
+  const { error } = await supabase.from("students").update({
+    exam_type: selectedExamType,
+    target_score: document.getElementById("target_score").value || null,
+    daily_study_minutes: Number(document.getElementById("daily_minutes").value) || 120,
+    preferred_start_time: document.getElementById("start_time").value,
+    preferred_end_time: document.getElementById("end_time").value,
+    notification_frequency: document.getElementById("notif_freq").value,
+    onboarding_completed: true,
+    updated_at: new Date().toISOString(),
+  }).eq("user_id", session.user.id);
+
+  if (error) {
+    toast(error.message, "error");
+    btn.disabled = false; btn.textContent = "Planımı Oluştur";
+    return;
+  }
+
+  await supabase.rpc("generate_study_plan", {});
+  window.location.href = "dashboard.html";
+});
+</script>
+</body>
+</html>

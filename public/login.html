@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Giriş Yap · KPSS Akıllı</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-violet-50 min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+  <div class="auth-blob" style="width:320px;height:320px;background:#818cf8;top:-80px;left:-100px;"></div>
+  <div class="auth-blob" style="width:280px;height:280px;background:#c4b5fd;bottom:-60px;right:-80px;animation-delay:2s;"></div>
+  <div class="w-full max-w-sm relative z-10">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: linear-gradient(135deg, #6366f1, #7c3aed); box-shadow: 0 10px 28px rgba(99,102,241,.4);">🎯</div>
+      <h1 class="text-2xl font-extrabold text-slate-900">KPSS Akıllı Öğrenci Platformu</h1>
+      <p class="text-sm text-slate-500 mt-1">Bugün KPSS için ne yapmalısın? Söyleyelim.</p>
+    </div>
+    <form id="login-form" class="card p-6 space-y-4">
+      <div>
+        <label class="text-sm font-medium text-slate-700 block mb-1.5">E-posta</label>
+        <input id="email" type="email" required class="input" placeholder="ornek@eposta.com" />
+      </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700 block mb-1.5">Şifre</label>
+        <input id="password" type="password" required class="input" placeholder="••••••••" />
+      </div>
+      <button type="submit" id="submit-btn" class="btn-primary w-full py-2.5">Giriş Yap</button>
+      <p id="error-msg" class="text-sm text-rose-600 hidden"></p>
+    </form>
+    <p class="text-center text-sm text-slate-500 mt-5">Hesabın yok mu? <a href="register.html" class="text-indigo-600 font-semibold hover:underline">Kayıt ol</a></p>
+  </div>
+<script type="module">
+import { supabase } from "./js/supabaseClient.js";
+import { redirectIfAuthed } from "./js/auth.js";
+await redirectIfAuthed();
+
+const form = document.getElementById("login-form");
+const errorMsg = document.getElementById("error-msg");
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorMsg.classList.add("hidden");
+  const btn = document.getElementById("submit-btn");
+  btn.disabled = true; btn.textContent = "Giriş yapılıyor...";
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: document.getElementById("email").value.trim(),
+    password: document.getElementById("password").value,
+  });
+  if (error) {
+    errorMsg.textContent = "Giriş başarısız: e-posta veya şifre hatalı.";
+    errorMsg.classList.remove("hidden");
+    btn.disabled = false; btn.textContent = "Giriş Yap";
+    return;
+  }
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
+  window.location.href = profile?.role === "admin" ? "admin/index.html" : "dashboard.html";
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Analiz · KPSS Akıllı</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-slate-50">
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <main class="main-content w-full">
+      <div class="max-w-3xl mx-auto p-4 sm:p-6 space-y-5 pb-10">
+
+        <!-- Başlık -->
+        <div class="fadeIn">
+          <h1 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2">📊 Analiz</h1>
+          <p class="text-sm text-slate-500 mt-0.5">Performansını ve ilerlemeni detaylı incele.</p>
+        </div>
+
+        <div id="content">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="skeleton h-24 w-full"></div>
+            <div class="skeleton h-24 w-full"></div>
+            <div class="skeleton h-24 w-full"></div>
+            <div class="skeleton h-24 w-full"></div>
+          </div>
+          <div class="skeleton h-40 w-full mt-4"></div>
+          <div class="skeleton h-52 w-full mt-4"></div>
+        </div>
+
+        <!-- Boş durum -->
+        <div id="empty-state" class="hidden card p-8 text-center">
+          <div class="text-4xl mb-3">📈</div>
+          <p class="text-slate-600 font-medium mb-1">Henüz soru çözmedin, istatistiklerin burada görünecek.</p>
+          <a href="practice.html" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Soru Çözmeye Başla</a>
+        </div>
+
+        <!-- Hata durumu -->
+        <div id="error-state" class="hidden card p-8 text-center">
+          <div class="text-4xl mb-3">😕</div>
+          <p class="text-slate-600 font-medium mb-1">Analiz verileri yüklenirken bir sorun oluştu.</p>
+          <p class="text-sm text-slate-400 mb-4">Lütfen tekrar dene.</p>
+          <button id="retry-btn" class="btn-primary px-5 py-2.5">Tekrar Dene</button>
+        </div>
+      </div>
+    </main>
+    <nav id="bottomnav"></nav>
+  </div>
+
+  <!-- Floating AI Assistant Button -->
+  <a href="assistant.html" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg" style="background: linear-gradient(135deg, #6366f1, #7c3aed); box-shadow: 0 6px 20px rgba(99,102,241,.45);" title="AI Asistan">
+    🤖
+  </a>
+
+  <script type="module" src="js/analytics.js"></script>
+</body>
+</html>
