@@ -52,6 +52,32 @@ export function scoreColor(score) {
   return LEVEL_COLORS.cok_iyi;
 }
 
+// Animates a number counting up from 0 (or its current value) to `target`.
+// Pass a formatter (e.g. v => `%${v}`) to render the value each frame.
+export function countUp(el, target, { duration = 900, formatter = (v) => String(v), prefix = "", suffix = "" } = {}) {
+  if (!el) return;
+  const t = Number(target) || 0;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.textContent = `${prefix}${formatter(t)}${suffix}`;
+    return;
+  }
+  const start = performance.now();
+  const from = 0;
+  function tick(now) {
+    const elapsed = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - elapsed, 3); // ease-out cubic
+    const current = Math.round(from + (t - from) * eased);
+    el.textContent = `${prefix}${formatter(current)}${suffix}`;
+    if (elapsed < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      el.classList.add("count-up-flash");
+      setTimeout(() => el.classList.remove("count-up-flash"), 650);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
 export function renderMarkdown(md) {
   if (!md) return "";
   let html = escapeHtml(md);

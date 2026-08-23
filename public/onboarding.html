@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Profilini Oluştur · KPSS Akıllı</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/tailwind-static.css" />
 <link rel="stylesheet" href="css/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 </head>
 <body class="bg-slate-50 min-h-screen">
   <div class="max-w-lg mx-auto p-4 sm:p-6 py-10">
@@ -85,24 +88,21 @@ document.getElementById("onboarding-form").addEventListener("submit", async (e) 
   const btn = document.getElementById("submit-btn");
   btn.disabled = true; btn.textContent = "Hazırlanıyor...";
 
-  const { error } = await supabase.from("students").update({
-    exam_type: selectedExamType,
-    target_score: document.getElementById("target_score").value || null,
-    daily_study_minutes: Number(document.getElementById("daily_minutes").value) || 120,
-    preferred_start_time: document.getElementById("start_time").value,
-    preferred_end_time: document.getElementById("end_time").value,
-    notification_frequency: document.getElementById("notif_freq").value,
-    onboarding_completed: true,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", session.user.id);
+  const { error } = await supabase.rpc("complete_onboarding", {
+    p_exam_type: selectedExamType,
+    p_target_score: document.getElementById("target_score").value || null,
+    p_daily_minutes: Number(document.getElementById("daily_minutes").value) || 120,
+    p_start_time: document.getElementById("start_time").value,
+    p_end_time: document.getElementById("end_time").value,
+    p_notif_freq: document.getElementById("notif_freq").value,
+  });
 
   if (error) {
-    toast(error.message, "error");
+    toast(error.message || "Profil kaydedilemedi, tekrar dener misin?", "error");
     btn.disabled = false; btn.textContent = "Planımı Oluştur";
     return;
   }
 
-  await supabase.rpc("generate_study_plan", {});
   window.location.href = "dashboard.html";
 });
 </script>

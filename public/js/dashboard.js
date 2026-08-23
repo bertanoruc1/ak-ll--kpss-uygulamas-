@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
 import { mountNav } from "./nav.js";
-import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor } from "./ui.js";
+import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor, countUp } from "./ui.js";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
 
 const auth = await requireAuth();
@@ -53,11 +53,13 @@ function renderGreeting(data) {
     <h1 class="text-2xl font-extrabold text-slate-900">Merhaba, ${escapeHtml(data.greeting_name || "Öğrenci")}!</h1>
     <p class="text-sm text-slate-500 mt-0.5">${timeOfDayGreeting()}, bugün seni bekleyenlere göz at.</p>
     <div class="flex items-center gap-2 mt-2.5">
-      <span class="badge bg-orange-50 text-orange-700">🔥 ${data.streak ?? 0} gün seri</span>
-      <span class="badge badge-gold">✨ ${data.xp ?? 0} XP</span>
+      <span class="badge bg-orange-50 text-orange-700">🔥 <span id="stat-streak">0</span> gün seri</span>
+      <span class="badge badge-gold">✨ <span id="stat-xp">0</span> XP</span>
       <span class="badge bg-indigo-50 text-indigo-700">🏅 Seviye ${data.level ?? 1}</span>
     </div>
   `;
+  countUp(document.getElementById("stat-streak"), data.streak ?? 0, { duration: 700 });
+  countUp(document.getElementById("stat-xp"), data.xp ?? 0, { duration: 1100 });
 
   const notifBadge = document.getElementById("notif-badge");
   const unread = data.unread_notifications || 0;
@@ -86,13 +88,14 @@ function renderExamCountdown(data) {
       <div class="relative z-10">
         <p class="text-sm font-medium text-indigo-100 tracking-wide">${escapeHtml(exam.name)}</p>
         <div class="flex items-end gap-2 mt-1">
-          <span class="text-5xl font-extrabold leading-none">${exam.days_left}</span>
+          <span id="stat-days-left" class="text-5xl font-extrabold leading-none">0</span>
           <span class="text-lg font-semibold mb-1">gün kaldı</span>
         </div>
         <p class="text-sm text-indigo-100 mt-2">${fmtDate(exam.exam_date)}</p>
       </div>
       <div class="absolute -right-6 -bottom-6 text-8xl opacity-20">🎯</div>
     </div>`;
+  countUp(document.getElementById("stat-days-left"), exam.days_left ?? 0, { duration: 1000 });
 }
 
 function renderTopNews(data) {
@@ -121,12 +124,17 @@ function renderTodayStatus(data) {
     <div class="card p-5">
       <div class="flex items-center justify-between mb-2">
         <p class="font-bold text-slate-900">Bugün ${done}/${total} tamamlandı</p>
-        <span class="text-sm font-semibold text-indigo-600">%${pct}</span>
+        <span class="text-sm font-semibold text-indigo-600">%<span id="stat-today-pct">0</span></span>
       </div>
       <div class="progress-track">
-        <div class="progress-fill" style="width:${pct}%; background: linear-gradient(90deg, #6366f1, #7c3aed);"></div>
+        <div id="today-progress-fill" class="progress-fill" style="width:0%; background: linear-gradient(90deg, #6366f1, #7c3aed);"></div>
       </div>
     </div>`;
+  countUp(document.getElementById("stat-today-pct"), pct, { duration: 700 });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const fill = document.getElementById("today-progress-fill");
+    if (fill) fill.style.width = `${pct}%`;
+  }));
 }
 
 function renderTodayPriority(data) {
@@ -227,10 +235,11 @@ function renderSuccessRate(data) {
     <div class="card p-5 flex items-center justify-between">
       <div>
         <p class="text-sm font-semibold text-slate-500">Genel Başarı Oranı</p>
-        <p class="text-4xl font-extrabold mt-1" style="color: ${scoreColor(rate)};">%${Math.round(rate)}</p>
+        <p class="text-4xl font-extrabold mt-1" style="color: ${scoreColor(rate)};">%<span id="stat-success-rate">0</span></p>
       </div>
       <div class="text-4xl">📊</div>
     </div>`;
+  countUp(document.getElementById("stat-success-rate"), Math.round(rate), { duration: 1000 });
 }
 
 function renderWeeklyProgress(data) {

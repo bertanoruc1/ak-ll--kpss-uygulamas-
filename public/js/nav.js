@@ -22,7 +22,20 @@ const BOTTOM_LINKS = [
   { href: "profile.html", icon: "👤", label: "Profil" },
 ];
 
+function mountAmbientBackground() {
+  if (document.querySelector(".ambient-orbs")) return; // already mounted (or page navigated via bfcache)
+  const layer = document.createElement("div");
+  layer.className = "ambient-orbs";
+  layer.setAttribute("aria-hidden", "true");
+  layer.innerHTML = `
+    <span class="ambient-orb ambient-orb-1"></span>
+    <span class="ambient-orb ambient-orb-2"></span>
+    <span class="ambient-orb ambient-orb-3"></span>`;
+  document.body.prepend(layer);
+}
+
 export function mountNav(activeHref) {
+  mountAmbientBackground();
   const sidebar = document.getElementById("sidebar");
   const bottomnav = document.getElementById("bottomnav");
 

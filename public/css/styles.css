@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* Inter font is now loaded via <link rel="preconnect"> + <link rel="stylesheet">
+   tags in each page's <head> instead of @import, so it loads in parallel with
+   this stylesheet rather than blocking behind it. */
 
 :root {
   --brand-1: #6366f1;
@@ -169,3 +171,45 @@ a.card:hover, .card-hover:hover {
   text-transform: uppercase; letter-spacing: .08em; margin: 1.25rem 0 .5rem;
 }
 .divider-label::before, .divider-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+/* ============ AMBIENT BACKGROUND (app-wide "immersive" atmosphere) ============ */
+.ambient-orbs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.ambient-orb {
+  position: absolute; border-radius: 50%; filter: blur(70px);
+  animation: driftOrb 22s ease-in-out infinite;
+  will-change: transform;
+}
+.ambient-orb-1 { width: 420px; height: 420px; top: -140px; right: -120px; background: radial-gradient(circle, rgba(124,58,237,.16), rgba(124,58,237,0) 70%); animation-duration: 26s; }
+.ambient-orb-2 { width: 380px; height: 380px; bottom: -120px; left: -100px; background: radial-gradient(circle, rgba(99,102,241,.14), rgba(99,102,241,0) 70%); animation-duration: 30s; animation-delay: -6s; }
+.ambient-orb-3 { width: 300px; height: 300px; top: 40%; left: 55%; background: radial-gradient(circle, rgba(212,169,78,.10), rgba(212,169,78,0) 70%); animation-duration: 34s; animation-delay: -14s; }
+@keyframes driftOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 24px) scale(1.08); }
+  66% { transform: translate(22px, -18px) scale(0.96); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb, .auth-blob { animation: none; }
+}
+/* app-shell content sits above the ambient layer; cards already have solid backgrounds */
+.app-shell, #bottomnav { position: relative; z-index: 1; }
+
+/* ============ MICRO-INTERACTIONS ============ */
+@keyframes countUpGlow {
+  0% { text-shadow: 0 0 0 rgba(99,102,241,0); }
+  40% { text-shadow: 0 0 18px rgba(99,102,241,.35); }
+  100% { text-shadow: 0 0 0 rgba(99,102,241,0); }
+}
+.count-up-flash { animation: countUpGlow .6s ease-out; }
+
+.badge-gold, .badge.bg-orange-50 { transition: transform .2s ease; }
+.badge-gold:hover, .badge.bg-orange-50:hover { transform: translateY(-1px) scale(1.04); }
+
+/* staggered entrance for a list of cards: apply class "stagger" to the parent */
+.stagger > * { animation: fadeIn .45s cubic-bezier(.22,1,.36,1) both; }
+.stagger > *:nth-child(1) { animation-delay: .03s; }
+.stagger > *:nth-child(2) { animation-delay: .09s; }
+.stagger > *:nth-child(3) { animation-delay: .15s; }
+.stagger > *:nth-child(4) { animation-delay: .21s; }
+.stagger > *:nth-child(5) { animation-delay: .27s; }
+.stagger > *:nth-child(6) { animation-delay: .33s; }
+.stagger > *:nth-child(n+7) { animation-delay: .38s; }
