@@ -1,6 +1,13 @@
 export const SUPABASE_URL = "https://zptzcnzgxphxlxwuzrpo.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_mJzUaaJskzVDkzoctF8tHw_CEya7aLx";
 
+// Push bildirimleri (hatırlatıcılar) için VAPID PUBLIC anahtarı — bu anahtar
+// GİZLİ DEĞİLDİR, tarayıcıya gönderilmek üzere tasarlanmıştır (bkz. push.js).
+// Eşleşen PRIVATE anahtar yalnızca Supabase Edge Function secret'ı olarak
+// saklanır, hiçbir zaman bu depoya (repo) yazılmaz — bkz.
+// supabase/functions/send-reminders/README.md.
+export const VAPID_PUBLIC_KEY = "BNs0rKPIYVX0llovMXRfL0c0Vd9yEBKRtdHGp5fgTEzRQsypDOsw-99nOCjIwx-B9BASg2enGSp8ekpb1rPxqMA";
+
 export const EXAM_TYPE_LABELS = {
   kpss_lisans: "KPSS Lisans",
   kpss_onlisans: "KPSS Ön Lisans",

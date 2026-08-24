@@ -111,7 +111,7 @@ function renderMistakeItem(m) {
       </div>
 
       <div class="flex items-center gap-2 mt-3 flex-wrap">
-        <a href="practice.html?topic=${m.topic_id}" class="btn-primary px-4 py-2 text-xs">Tekrar Çöz</a>
+        <a href="topic.html?id=${m.topic_id}" class="btn-primary px-4 py-2 text-xs">Tekrar Çöz</a>
         ${hasDetail ? `<button class="detail-toggle-btn btn-secondary px-4 py-2 text-xs" data-target="${detailId}">Detaylı çözümü gör</button>` : ""}
       </div>
 

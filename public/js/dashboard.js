@@ -3,6 +3,7 @@ import { requireAuth } from "./auth.js";
 import { mountNav } from "./nav.js";
 import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor, countUp } from "./ui.js";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
+import { ensurePushSubscription } from "./push.js";
 
 const auth = await requireAuth();
 if (!auth) {
@@ -35,9 +36,11 @@ function shortTime(t) {
 function sessionLink(session) {
   const type = session.session_type;
   const topicId = session.topic_id;
-  // session id'yi de linkliyoruz ki practice.html/topic.js hedefe ulaşınca
-  // (ör. "6 soru" bitince) bu görevi otomatik "Tamamlandı" olarak işaretleyebilsin.
-  if (type === "soru_cozme") return `practice.html?topic=${topicId}&session=${session.id}`;
+  // Sorular artık ayrı bir sayfa değil, konu sayfasının (topic.html) içine
+  // gömülü — bu yüzden 3 görev türü de aynı sayfaya yönlendiriyor. session
+  // id'yi de linkliyoruz ki topic.js hedefe ulaşınca (ör. "6 soru" bitince)
+  // bu görevi otomatik "Tamamlandı" olarak işaretleyebilsin.
+  if (type === "soru_cozme") return `topic.html?id=${topicId}&session=${session.id}`;
   if (type === "konu_ogrenme") return `topic.html?id=${topicId}&session=${session.id}`;
   if (type === "tekrar") return `topic.html?id=${topicId}&review=1&session=${session.id}`;
   return "#";
@@ -212,7 +215,7 @@ function renderTodayPriority(data) {
       </div>
       <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wide">${escapeHtml(p.subject_name || "")} · ${escapeHtml(p.topic_name || "")}</p>
       <p class="font-bold text-lg text-slate-900 mt-1 leading-snug">${escapeHtml(p.reason)}</p>
-      <a href="practice.html?topic=${p.topic_id}" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Şimdi Çalış →</a>
+      <a href="topic.html?id=${p.topic_id}" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Şimdi Çalış →</a>
     </div>`;
 }
 
@@ -353,6 +356,213 @@ async function submitPlanModal(btn) {
   window.location.reload();
 }
 
+// ---- "+ Görev Ekle" (manuel görev) modalı ----
+// Kullanıcı kendi görevini kendi belirlesin istiyor: "bugün Matematik'te
+// EBOB-EKOK'a çalışacağım, 12:00-14:00" gibi. create_manual_session RPC'si
+// bunu study_sessions'a is_manual=true olarak ekliyor; buradan da
+// ensurePushSubscription() ile bildirim izni isteniyor ki görev zamanı
+// gelince (send-reminders Edge Function, her dakika pg_cron ile) gerçek bir
+// push bildirimi + uygulama içi 🔔 bildirimi gönderilebilsin.
+const TASK_SESSION_TYPES = ["konu_ogrenme", "soru_cozme", "tekrar", "mola"];
+let taskSubjectsCache = null;
+
+function closeTaskModal() {
+  const el = document.getElementById("task-modal-overlay");
+  if (el) el.remove();
+  document.removeEventListener("keydown", handleTaskModalKeydown);
+}
+
+function handleTaskModalKeydown(e) {
+  if (e.key === "Escape") closeTaskModal();
+}
+
+async function loadTaskSubjects() {
+  if (taskSubjectsCache) return taskSubjectsCache;
+  const examType = student?.exam_type || "kpss_lisans";
+  const { data, error } = await supabase
+    .from("subjects")
+    .select("id, name, icon")
+    .eq("exam_type", examType)
+    .order("order_index");
+  if (error) {
+    taskSubjectsCache = [];
+  } else {
+    taskSubjectsCache = data || [];
+  }
+  return taskSubjectsCache;
+}
+
+async function openTaskModal() {
+  closeTaskModal();
+
+  const overlay = document.createElement("div");
+  overlay.id = "task-modal-overlay";
+  overlay.className = "fixed inset-0 z-50 flex items-center justify-center p-4";
+  overlay.style.background = "rgba(15,10,50,.45)";
+  overlay.style.backdropFilter = "blur(3px)";
+  overlay.innerHTML = `
+    <div class="card p-6 w-full fadeIn" style="max-width: 440px; max-height: 88vh; overflow-y: auto;">
+      <p class="text-lg font-extrabold text-slate-900">📝 Bugün Yapılacak Görev Ekle</p>
+      <p class="text-sm text-slate-500 mt-1">Ne zaman, hangi derste, hangi konuya çalışacağını belirle — saati gelince sana hatırlatalım.</p>
+
+      <div class="mt-5">
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Görev Türü</label>
+        <select id="task-type" class="input">
+          ${TASK_SESSION_TYPES.map((t) => `<option value="${t}">${SESSION_TYPE_ICONS[t] || ""} ${SESSION_TYPE_LABELS[t] || t}</option>`).join("")}
+        </select>
+      </div>
+
+      <div class="mt-3" id="task-subject-wrap">
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Ders</label>
+        <select id="task-subject" class="input">
+          <option value="">Yükleniyor…</option>
+        </select>
+      </div>
+
+      <div class="mt-3" id="task-topic-wrap">
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Konu <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
+        <select id="task-topic" class="input">
+          <option value="">Konu seçilmedi</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1.5">Başlangıç Saati</label>
+          <input id="task-start-time" type="time" class="input" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1.5">Bitiş Saati</label>
+          <input id="task-end-time" type="time" class="input" />
+        </div>
+      </div>
+
+      <div class="mt-3" id="task-question-target-wrap">
+        <label class="text-xs font-semibold text-slate-600 block mb-1.5">Hedef Soru Sayısı <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
+        <input id="task-question-target" type="number" min="1" step="1" class="input" placeholder="ör. 20" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <button id="task-modal-cancel" type="button" class="btn-secondary py-2.5">Vazgeç</button>
+        <button id="task-modal-submit" type="button" class="btn-primary py-2.5">Görevi Oluştur</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const typeSelect = document.getElementById("task-type");
+  const subjectSelect = document.getElementById("task-subject");
+  const topicSelect = document.getElementById("task-topic");
+  const subjectWrap = document.getElementById("task-subject-wrap");
+  const topicWrap = document.getElementById("task-topic-wrap");
+  const questionTargetWrap = document.getElementById("task-question-target-wrap");
+
+  function syncFieldsForType() {
+    const isMola = typeSelect.value === "mola";
+    subjectWrap.classList.toggle("hidden", isMola);
+    topicWrap.classList.toggle("hidden", isMola);
+    questionTargetWrap.classList.toggle("hidden", typeSelect.value !== "soru_cozme");
+  }
+  typeSelect.addEventListener("change", syncFieldsForType);
+  syncFieldsForType();
+
+  async function loadTopicsForSubject(subjectId) {
+    if (!subjectId) {
+      topicSelect.innerHTML = `<option value="">Konu seçilmedi</option>`;
+      return;
+    }
+    topicSelect.innerHTML = `<option value="">Yükleniyor…</option>`;
+    const { data, error } = await supabase
+      .from("topics")
+      .select("id, name")
+      .eq("subject_id", subjectId)
+      .order("order_index");
+    if (error || !data) {
+      topicSelect.innerHTML = `<option value="">Konu seçilmedi</option>`;
+      return;
+    }
+    topicSelect.innerHTML =
+      `<option value="">Konu seçilmedi</option>` +
+      data.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+  }
+
+  const subjects = await loadTaskSubjects();
+  if (subjects.length === 0) {
+    subjectSelect.innerHTML = `<option value="">Ders bulunamadı</option>`;
+  } else {
+    subjectSelect.innerHTML = subjects
+      .map((s) => `<option value="${s.id}">${s.icon ? escapeHtml(s.icon) + " " : ""}${escapeHtml(s.name)}</option>`)
+      .join("");
+    await loadTopicsForSubject(subjectSelect.value);
+  }
+  subjectSelect.addEventListener("change", () => loadTopicsForSubject(subjectSelect.value));
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeTaskModal(); });
+  document.getElementById("task-modal-cancel").addEventListener("click", closeTaskModal);
+  document.getElementById("task-modal-submit").addEventListener("click", (e) => submitTaskModal(e.currentTarget));
+  document.addEventListener("keydown", handleTaskModalKeydown);
+}
+
+async function submitTaskModal(btn) {
+  const sessionType = document.getElementById("task-type").value;
+  const subjectId = document.getElementById("task-subject").value || null;
+  const topicId = document.getElementById("task-topic").value || null;
+  const startTime = document.getElementById("task-start-time").value;
+  const endTime = document.getElementById("task-end-time").value;
+  const questionTargetRaw = document.getElementById("task-question-target").value;
+  const questionTarget = sessionType === "soru_cozme" && questionTargetRaw ? Number(questionTargetRaw) : null;
+
+  if (sessionType !== "mola" && !subjectId) {
+    toast("Lütfen bir ders seç.", "error");
+    return;
+  }
+  if (!startTime || !endTime) {
+    toast("Lütfen başlangıç ve bitiş saatini seç.", "error");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Oluşturuluyor...";
+
+  const { error } = await supabase.rpc("create_manual_session", {
+    p_subject_id: sessionType === "mola" ? null : subjectId,
+    p_topic_id: sessionType === "mola" ? null : topicId,
+    p_session_type: sessionType,
+    p_planned_start: startTime,
+    p_planned_end: endTime,
+    p_question_target: questionTarget,
+    p_plan_date: new Date().toISOString().slice(0, 10),
+  });
+
+  if (error) {
+    toast(error.message || "Görev oluşturulamadı.", "error");
+    btn.disabled = false;
+    btn.textContent = "Görevi Oluştur";
+    return;
+  }
+
+  // Görev zamanı gelince hatırlatıcı gönderebilmek için push aboneliğini
+  // kur (izin daha önce verilmediyse tarayıcı burada soracak). Kullanıcı
+  // izin vermese/tarayıcı desteklemese bile görev zaten oluşturuldu — bu
+  // adım sessizce başarısız olabilir, görevi engellemez.
+  ensurePushSubscription().catch(() => {});
+
+  toast("Görev eklendi! Saati gelince hatırlatacağız.", "success");
+  closeTaskModal();
+  loadHomepage();
+}
+
+async function deleteManualTask(sessionId, btn) {
+  if (btn) btn.disabled = true;
+  const { error } = await supabase.rpc("delete_manual_session", { p_session_id: sessionId });
+  if (error) {
+    toast(error.message || "Görev silinemedi.", "error");
+    if (btn) btn.disabled = false;
+    return;
+  }
+  toast("Görev silindi.", "success");
+  loadHomepage();
+}
+
 function renderScheduleTimeline(data) {
   const el = document.getElementById("schedule-timeline");
   const sessions = data.today_sessions || [];
@@ -363,17 +573,24 @@ function renderScheduleTimeline(data) {
         <div class="text-3xl mb-2">🗓️</div>
         <p class="font-semibold text-slate-700">Bugün için henüz bir plan yok.</p>
         <p class="text-sm text-slate-400 mt-1">Çalışma saatlerini seç, hemen bir plan oluşturalım.</p>
-        <button id="generate-plan-btn" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Bugünkü Planı Oluştur</button>
+        <div class="flex items-center justify-center gap-2.5 mt-4 flex-wrap">
+          <button id="generate-plan-btn" class="btn-primary inline-block px-5 py-2.5 text-sm">Bugünkü Planı Oluştur</button>
+          <button id="add-task-btn" class="btn-secondary inline-block px-5 py-2.5 text-sm">📝 Bugün Yapılacak Ekle</button>
+        </div>
       </div>`;
     document.getElementById("generate-plan-btn").addEventListener("click", () => openPlanModal());
+    document.getElementById("add-task-btn").addEventListener("click", () => openTaskModal());
     return;
   }
 
   el.innerHTML = `
     <div class="card p-5">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <p class="font-bold text-slate-900">Bugünün Programı</p>
-        <button id="replan-btn" class="text-xs font-semibold text-indigo-600 hover:underline">⚙️ Saatleri Ayarla</button>
+        <div class="flex items-center gap-3">
+          <button id="add-task-btn" class="text-xs font-semibold text-indigo-600 hover:underline">📝 Bugün Yapılacak Ekle</button>
+          <button id="replan-btn" class="text-xs font-semibold text-indigo-600 hover:underline">⚙️ Saatleri Ayarla</button>
+        </div>
       </div>
       <div class="space-y-0">
         ${sessions.map((s, i) => `
@@ -382,32 +599,43 @@ function renderScheduleTimeline(data) {
               <div class="w-3 h-3 rounded-full mt-1.5 shrink-0" style="background: ${s.status === "done" ? "#10b981" : s.status === "skipped" ? "#cbd5e1" : "#6366f1"};"></div>
               ${i < sessions.length - 1 ? '<div class="w-px flex-1 bg-slate-200 my-0.5"></div>' : ""}
             </div>
-            <a href="${sessionLink(s)}" class="flex-1 pb-4 group">
-              <div class="rounded-xl border border-slate-100 group-hover:border-indigo-200 group-hover:bg-indigo-50/40 transition p-3">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-lg shrink-0">${SESSION_TYPE_ICONS[s.session_type] || "📌"}</span>
-                    <div class="min-w-0">
-                      <p class="text-xs font-semibold text-slate-400">${SESSION_TYPE_LABELS[s.session_type] || s.session_type}</p>
-                      <p class="text-sm font-bold text-slate-900 truncate">
-                        ${s.subject_icon ? escapeHtml(s.subject_icon) + " " : ""}${escapeHtml(s.subject_name || "")}${s.topic_name ? " · " + escapeHtml(s.topic_name) : ""}
-                      </p>
+            <div class="flex-1 pb-4 flex items-start gap-1.5">
+              <a href="${sessionLink(s)}" class="flex-1 group min-w-0">
+                <div class="rounded-xl border border-slate-100 group-hover:border-indigo-200 group-hover:bg-indigo-50/40 transition p-3">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="text-lg shrink-0">${SESSION_TYPE_ICONS[s.session_type] || "📌"}</span>
+                      <div class="min-w-0">
+                        <p class="text-xs font-semibold text-slate-400">${SESSION_TYPE_LABELS[s.session_type] || s.session_type}${s.is_manual ? " · kendi eklediğin görev" : ""}</p>
+                        <p class="text-sm font-bold text-slate-900 truncate">
+                          ${s.subject_icon ? escapeHtml(s.subject_icon) + " " : ""}${escapeHtml(s.subject_name || "")}${s.topic_name ? " · " + escapeHtml(s.topic_name) : ""}
+                        </p>
+                      </div>
                     </div>
+                    <span class="badge ${STATUS_CLASSES[s.status] || "bg-slate-100 text-slate-500"} shrink-0">${STATUS_LABELS[s.status] || s.status}</span>
                   </div>
-                  <span class="badge ${STATUS_CLASSES[s.status] || "bg-slate-100 text-slate-500"} shrink-0">${STATUS_LABELS[s.status] || s.status}</span>
+                  <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                    <span>⏰ ${shortTime(s.planned_start)}${s.planned_end ? "–" + shortTime(s.planned_end) : ""}</span>
+                    ${s.duration_minutes ? `<span>⏱ ${s.duration_minutes} dk</span>` : ""}
+                    ${s.question_target ? `<span>🎯 ${s.question_target} soru</span>` : ""}
+                  </div>
                 </div>
-                <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                  <span>⏰ ${shortTime(s.planned_start)}${s.planned_end ? "–" + shortTime(s.planned_end) : ""}</span>
-                  ${s.duration_minutes ? `<span>⏱ ${s.duration_minutes} dk</span>` : ""}
-                  ${s.question_target ? `<span>🎯 ${s.question_target} soru</span>` : ""}
-                </div>
-              </div>
-            </a>
+              </a>
+              ${s.is_manual ? `<button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">🗑️</button>` : ""}
+            </div>
           </div>
         `).join("")}
       </div>
     </div>`;
   document.getElementById("replan-btn").addEventListener("click", () => openPlanModal());
+  document.getElementById("add-task-btn").addEventListener("click", () => openTaskModal());
+  el.querySelectorAll(".delete-task-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteManualTask(btn.dataset.sessionId, btn);
+    });
+  });
 }
 
 function renderSuccessRate(data) {

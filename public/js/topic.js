@@ -2,6 +2,7 @@ import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
 import { mountNav } from "./nav.js";
 import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js";
+import { createPracticeEngine } from "./practiceEngine.js";
 
 const auth = await requireAuth();
 if (!auth) throw new Error("not authenticated");
@@ -39,6 +40,8 @@ function skeleton() {
 }
 
 let topic, subject, topicContent, progress, dueRepetition;
+let practiceEngine = null;
+let practiceStarted = false;
 
 async function loadTopic() {
   if (!topicId) {
@@ -123,10 +126,6 @@ function render() {
 
       <div id="repetition-card" class="mt-4"></div>
 
-      <div class="mt-4">
-        <a href="practice.html?topic=${topic.id}" class="btn-primary text-center py-3 block">📝 Soru Çöz</a>
-      </div>
-
       <div class="card p-5 mt-5">
         <p class="font-bold text-slate-900 mb-2">📌 Özet</p>
         ${topicContent?.summary ? `<p class="text-sm text-slate-600 leading-relaxed">${escapeHtml(topicContent.summary)}</p>` : `<p class="text-sm text-slate-400 italic">İçerik henüz eklenmedi.</p>`}
@@ -155,15 +154,47 @@ function render() {
 
       <div class="card p-5 mt-4 text-center" style="background: linear-gradient(135deg, #eef2ff, #f5f3ff); border: 1px solid #e0e7ff;">
         <p class="font-bold text-slate-900 mb-1">Bu konuyu öğrendiğini düşünüyor musun?</p>
-        <p class="text-xs text-slate-500 mb-3">Onayladığında bu konuyla ilgili sorularla kendini hemen test edebilirsin.</p>
+        <p class="text-xs text-slate-500 mb-3">Onayladığında aşağıdaki soru bölümü hemen açılır.</p>
         <button id="understood-btn" class="btn-primary px-5 py-2.5">✅ Bu konuyu anladım, soruları göster</button>
+      </div>
+
+      <div class="card p-5 mt-4" id="practice-card">
+        <p class="font-bold text-slate-900 mb-3">📝 Soru Çöz</p>
+        <div id="practice-mount">
+          <button id="start-practice-btn" type="button" class="btn-primary w-full py-3">📝 Soru Çözmeye Başla</button>
+        </div>
       </div>
     </div>`;
 
   renderRepetitionCard();
   document.getElementById("understood-btn").addEventListener("click", handleUnderstood);
+  document.getElementById("start-practice-btn").addEventListener("click", () => startPractice());
   const videoBtn = document.getElementById("video-watched-btn");
   if (videoBtn) videoBtn.addEventListener("click", handleVideoWatched);
+
+  // Bir "görev" (soru çözme) linkiyle gelindiyse, kullanıcı tekrar tıklamak
+  // zorunda kalmadan soru bölümü otomatik açılsın.
+  if (sessionId && !practiceStarted) {
+    startPractice();
+  }
+}
+
+function startPractice() {
+  practiceStarted = true;
+  const mount = document.getElementById("practice-mount");
+  if (!mount) return;
+  if (!practiceEngine) {
+    practiceEngine = createPracticeEngine({
+      topicId,
+      sessionId,
+      mountEl: mount,
+      topicName: topic?.name,
+      showHeader: true,
+      backHref: null,
+    });
+  }
+  practiceEngine.start();
+  document.getElementById("practice-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderRepetitionCard() {
@@ -210,12 +241,13 @@ async function handleUnderstood() {
     btn.textContent = "✅ Bu konuyu anladım, soruları göster";
     return;
   }
-  toast("Öz değerlendirme kaydedildi, sorulara yönlendiriliyorsun...", "success");
+  toast("Öz değerlendirme kaydedildi, sorulara başlayabilirsin!", "success");
   await completeSessionIfLinked();
+  btn.textContent = "✅ Kaydedildi";
   // Kullanıcı "anladım" dediğinde en doğru sonraki adım, o konuyla ilgili
-  // sorularla kendini hemen test etmesi — bu yüzden burada aynı sayfayı yeniden
-  // render etmek yerine doğrudan practice sayfasına yönlendiriyoruz.
-  window.location.href = `practice.html?topic=${topicId}`;
+  // sorularla kendini hemen test etmesi — bu yüzden ayrı bir sayfaya
+  // yönlendirmek yerine aynı sayfadaki soru bölümünü açıp oraya kaydırıyoruz.
+  startPractice();
 }
 
 async function handleVideoWatched() {

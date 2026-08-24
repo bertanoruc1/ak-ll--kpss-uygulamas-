@@ -1,9 +1,12 @@
 import { signOut } from "./auth.js";
 
+// NOT: "Sorular" artık ayrı bir bölüm/sekme değil — her konunun içeriğiyle
+// birlikte, konu sayfasının (topic.html) içine gömülü olarak sunuluyor.
+// "Dersler"e girip bir konu seçtiğinde hem konu anlatımını hem de soru
+// çözme bölümünü aynı sayfada bulursun.
 const LINKS = [
   { href: "dashboard.html", icon: "🏠", label: "Ana Sayfa" },
   { href: "subjects.html", icon: "📚", label: "Dersler" },
-  { href: "practice.html", icon: "📝", label: "Sorular" },
   { href: "mistakes.html", icon: "❌", label: "Yanlışlarım" },
   { href: "news.html", icon: "📰", label: "Haberler" },
   { href: "exams.html", icon: "📅", label: "Sınav Takvimi" },
@@ -13,11 +16,10 @@ const LINKS = [
   { href: "profile.html", icon: "👤", label: "Profil" },
 ];
 
-// Mobil alt gezinme (spesifikasyondaki 5 ana sekme)
+// Mobil alt gezinme (4 ana sekme)
 const BOTTOM_LINKS = [
   { href: "dashboard.html", icon: "🏠", label: "Ana Sayfa" },
   { href: "subjects.html", icon: "📚", label: "Dersler" },
-  { href: "practice.html", icon: "📝", label: "Sorular" },
   { href: "exams.html", icon: "📅", label: "Plan" },
   { href: "profile.html", icon: "👤", label: "Profil" },
 ];
@@ -66,7 +68,7 @@ export function mountNav(activeHref) {
 
   if (bottomnav) {
     bottomnav.innerHTML = `
-      <div class="grid grid-cols-5">
+      <div class="grid grid-cols-4">
         ${BOTTOM_LINKS.map(l => `
           <a href="${l.href}" class="bottom-link ${activeHref === l.href ? "active" : ""}">
             <span class="bottom-icon">${l.icon}</span><span>${l.label}</span>
