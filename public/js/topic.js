@@ -11,6 +11,16 @@ mountNav("subjects.html");
 
 const params = new URLSearchParams(window.location.search);
 const topicId = params.get("id");
+const sessionId = params.get("session");
+
+// Dashboard'daki günlük plandan bir "görev" ile buraya gelindiyse, o görev
+// tamamlandığında (konu anlaşıldı / tekrar yapıldı) study_sessions'ı da
+// tamamlandı işaretle — böylece "Bugünün Programı" listesinde Tamamlandı görünür.
+async function completeSessionIfLinked() {
+  if (!sessionId) return;
+  const { error } = await supabase.rpc("complete_study_session", { p_session_id: sessionId });
+  if (error) console.error("complete_study_session failed:", error);
+}
 
 const contentEl = document.getElementById("content");
 const errorEl = document.getElementById("error-state");
@@ -186,6 +196,7 @@ async function handleRepetition(success) {
   toast(success ? "Harika, tekrar kaydedildi!" : "Tekrar planlandı, üzülme!", "success");
   dueRepetition = null;
   renderRepetitionCard();
+  completeSessionIfLinked();
 }
 
 async function handleUnderstood() {
@@ -200,6 +211,7 @@ async function handleUnderstood() {
     return;
   }
   toast("Öz değerlendirme kaydedildi, sorulara yönlendiriliyorsun...", "success");
+  await completeSessionIfLinked();
   // Kullanıcı "anladım" dediğinde en doğru sonraki adım, o konuyla ilgili
   // sorularla kendini hemen test etmesi — bu yüzden burada aynı sayfayı yeniden
   // render etmek yerine doğrudan practice sayfasına yönlendiriyoruz.

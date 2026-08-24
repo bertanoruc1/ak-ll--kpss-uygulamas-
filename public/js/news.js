@@ -22,6 +22,7 @@ const CATEGORY_COLORS = {
 
 let allNews = [];
 let activeCategory = "all";
+let studentExamType = null;
 
 const listEl = document.getElementById("news-list");
 const emptyEl = document.getElementById("empty-state");
@@ -144,11 +145,22 @@ async function loadNews() {
   chipsEl.innerHTML = "";
   errorEl.classList.add("hidden");
 
-  const { data, error } = await supabase
+  // Sınav türüne göre alakalı haberler: genel (exam_type = null) duyurular
+  // herkese, sınav türüne özel duyurular ise SADECE o türdeki adaylara
+  // gösterilir — böylece ör. Ön Lisans adayı yalnızca Lisans'a özel bir
+  // haberi (kendi sınavıyla ilgiliymiş gibi) görmez.
+  let query = supabase
     .from("news_items")
     .select("*")
-    .eq("is_learning_content", false)
-    .order("published_at", { ascending: false });
+    .eq("is_learning_content", false);
+
+  if (studentExamType) {
+    query = query.or(`exam_type.is.null,exam_type.eq.${studentExamType}`);
+  } else {
+    query = query.is("exam_type", null);
+  }
+
+  const { data, error } = await query.order("published_at", { ascending: false });
 
   if (error) {
     console.error(error);
@@ -166,6 +178,7 @@ async function loadNews() {
 async function init() {
   const auth = await requireAuth();
   if (!auth) return;
+  studentExamType = auth.student?.exam_type || null;
 
   mountNav("news.html");
   await loadNews();

@@ -10,6 +10,7 @@ mountNav("practice.html");
 
 const params = new URLSearchParams(window.location.search);
 const topicId = params.get("topic");
+const sessionId = params.get("session");
 
 const contentEl = document.getElementById("content");
 const errorEl = document.getElementById("error-state");
@@ -17,6 +18,10 @@ const errorEl = document.getElementById("error-state");
 let topic = null;
 const tally = { correct: 0, total: 0 };
 let answering = false;
+let sessionTarget = null; // Bu oturumda kaç soru çözülünce bitirilecek.
+let sessionRow = null; // study_sessions satırı (varsa) — "görev" tamamlama için.
+const servedQuestionIds = new Set(); // Sonsuz döngü koruması: aynı soru ikinci kez gelirse oturum bitmiştir.
+let finished = false;
 
 function showError() {
   errorEl.classList.remove("hidden");
@@ -61,7 +66,41 @@ async function init() {
   const { data: t } = await supabase.from("topics").select("id, name, subject_id").eq("id", topicId).maybeSingle();
   topic = t;
 
+  await resolveSessionTarget();
   await loadNextQuestion();
+}
+
+// Oturumun kaç soruda biteceğini belirle: eğer dashboard'daki günlük plandan
+// bir "görev" (study_sessions.id) ile gelindiyse o oturumun question_target'ı;
+// aksi hâlde konudaki TOPLAM soru sayısı hedef alınır. Bu, "6 soru varsa bitir"
+// davranışının kaynağı — hedefe ulaşınca sonsuz döngü yerine sonuç ekranı gelir.
+async function resolveSessionTarget() {
+  sessionTarget = null;
+  sessionRow = null;
+
+  const { count: totalInTopic } = await supabase
+    .from("questions")
+    .select("id", { count: "exact", head: true })
+    .eq("topic_id", topicId);
+
+  let target = totalInTopic || null;
+
+  if (sessionId) {
+    const { data: s } = await supabase
+      .from("study_sessions")
+      .select("id, question_target, status")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (s) {
+      sessionRow = s;
+      if (s.question_target) {
+        // Hedef, konudaki gerçek soru sayısını aşamaz (aksi hâlde asla ulaşılamaz).
+        target = totalInTopic ? Math.min(s.question_target, totalInTopic) : s.question_target;
+      }
+    }
+  }
+
+  sessionTarget = target && target > 0 ? target : null;
 }
 
 async function loadNextQuestion() {
@@ -85,6 +124,16 @@ async function loadNextQuestion() {
       </div>`;
     return;
   }
+
+  // Sonsuz döngü koruması: backend, konudaki tüm sorular bu oturumda
+  // cevaplandıysa (24 saatlik hariç tutma listesi tükendiyse) rastgele bir
+  // soruyu TEKRAR döndürür. Aynı soru ikinci kez geldiyse artık gösterecek
+  // yeni soru kalmamış demektir — döngüye girmek yerine oturumu bitir.
+  if (servedQuestionIds.has(q.id)) {
+    finishSession();
+    return;
+  }
+  servedQuestionIds.add(q.id);
 
   renderQuestion(q);
 }
@@ -155,6 +204,7 @@ async function handleAnswer(q, btn, startedAt) {
   const headerWrap = contentEl.querySelector(":scope > div:first-child");
   if (headerWrap) headerWrap.outerHTML = statsHeader();
 
+  const reachedTarget = sessionTarget != null && tally.total >= sessionTarget;
   const resultArea = document.getElementById("result-area");
   resultArea.innerHTML = `
     <div class="rounded-xl p-4 ${data.is_correct ? "bg-emerald-50 border border-emerald-100" : "bg-rose-50 border border-rose-100"} fadeIn">
@@ -163,12 +213,48 @@ async function handleAnswer(q, btn, startedAt) {
       <div id="explanation-box" class="mt-3">
         <div class="skeleton h-4 w-2/3"></div>
       </div>
-      <button id="next-question-btn" class="btn-primary mt-4 px-5 py-2.5 text-sm">Sonraki Soru →</button>
+      <button id="next-question-btn" class="btn-primary mt-4 px-5 py-2.5 text-sm">${reachedTarget ? "Bitir ve Sonucu Gör →" : "Sonraki Soru →"}</button>
     </div>`;
 
-  document.getElementById("next-question-btn").addEventListener("click", loadNextQuestion);
+  document.getElementById("next-question-btn").addEventListener("click", () => {
+    if (reachedTarget) finishSession();
+    else loadNextQuestion();
+  });
 
   loadExplanation(q.id);
+}
+
+// Oturum hedefine ulaşıldığında (veya gösterilecek yeni soru kalmadığında)
+// çağrılır: sonsuz döngü yerine bir sonuç ekranı gösterir ve — dashboard'daki
+// günlük plandan bir "görev" ile gelindiyse — o görevi tamamlandı olarak işaretler.
+async function finishSession() {
+  if (finished) return;
+  finished = true;
+
+  const pct = tally.total ? Math.round((tally.correct / tally.total) * 100) : 0;
+
+  contentEl.innerHTML = `
+    ${statsHeader()}
+    <div class="card p-8 text-center fadeIn">
+      <div class="text-5xl mb-3">${pct >= 70 ? "🏆" : pct >= 40 ? "👏" : "💪"}</div>
+      <p class="text-xl font-extrabold text-slate-900">Oturum tamamlandı!</p>
+      <p class="text-sm text-slate-500 mt-1">${escapeHtml(topic?.name || "")}</p>
+      <p class="text-4xl font-extrabold mt-4" style="color:${scoreColor(pct)};">${tally.correct}/${tally.total}</p>
+      <p class="text-sm font-semibold text-slate-500 mt-1">%${pct} başarı</p>
+      <div class="grid grid-cols-2 gap-3 mt-6">
+        <a href="topic.html?id=${topicId}" class="btn-secondary py-2.5 text-sm text-center">Konuya Dön</a>
+        <a href="dashboard.html" class="btn-primary py-2.5 text-sm text-center">Panele Dön</a>
+      </div>
+    </div>`;
+
+  if (sessionId && sessionRow && sessionRow.status !== "done") {
+    const { error } = await supabase.rpc("complete_study_session", { p_session_id: sessionId });
+    if (error) {
+      console.error("complete_study_session failed:", error);
+    } else {
+      toast("Görev tamamlandı olarak işaretlendi! 🎉", "success");
+    }
+  }
 }
 
 async function loadExplanation(questionId) {

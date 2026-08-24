@@ -35,9 +35,11 @@ function shortTime(t) {
 function sessionLink(session) {
   const type = session.session_type;
   const topicId = session.topic_id;
-  if (type === "soru_cozme") return `practice.html?topic=${topicId}`;
-  if (type === "konu_ogrenme") return `topic.html?id=${topicId}`;
-  if (type === "tekrar") return `topic.html?id=${topicId}&review=1`;
+  // session id'yi de linkliyoruz ki practice.html/topic.js hedefe ulaşınca
+  // (ör. "6 soru" bitince) bu görevi otomatik "Tamamlandı" olarak işaretleyebilsin.
+  if (type === "soru_cozme") return `practice.html?topic=${topicId}&session=${session.id}`;
+  if (type === "konu_ogrenme") return `topic.html?id=${topicId}&session=${session.id}`;
+  if (type === "tekrar") return `topic.html?id=${topicId}&review=1&session=${session.id}`;
   return "#";
 }
 
@@ -84,12 +86,18 @@ function renderHero(data) {
             <div class="flex items-end justify-between gap-3 flex-wrap">
               <div>
                 <p class="text-xs font-medium text-indigo-200 tracking-wide">${escapeHtml(exam.name)}</p>
-                <div class="flex items-end gap-2 mt-1">
+                <div class="flex items-end gap-1.5 mt-1 flex-wrap" id="exam-countdown">
                   <span id="stat-days-left" class="text-5xl font-extrabold leading-none">0</span>
-                  <span class="text-base font-semibold mb-1 text-indigo-100">gün kaldı</span>
+                  <span class="text-base font-semibold mb-1 text-indigo-100 mr-1.5">gün</span>
+                  <span id="stat-hours-left" class="text-2xl font-extrabold leading-none">00</span>
+                  <span class="text-sm font-semibold mb-0.5 text-indigo-100 mr-1">sa</span>
+                  <span id="stat-minutes-left" class="text-2xl font-extrabold leading-none">00</span>
+                  <span class="text-sm font-semibold mb-0.5 text-indigo-100 mr-1">dk</span>
+                  <span id="stat-seconds-left" class="text-2xl font-extrabold leading-none">00</span>
+                  <span class="text-sm font-semibold mb-0.5 text-indigo-100">sn kaldı</span>
                 </div>
               </div>
-              <p class="text-xs text-indigo-200">${fmtDate(exam.exam_date)}</p>
+              <p class="text-xs text-indigo-200">${fmtDate(exam.exam_date)}${exam.exam_time ? " · " + exam.exam_time.slice(0,5) : ""}</p>
             </div>` : `
             <div class="flex items-center gap-3">
               <span class="text-2xl">📅</span>
@@ -104,7 +112,45 @@ function renderHero(data) {
 
   countUp(document.getElementById("stat-streak"), data.streak ?? 0, { duration: 700 });
   countUp(document.getElementById("stat-xp"), data.xp ?? 0, { duration: 1100 });
-  if (exam) countUp(document.getElementById("stat-days-left"), exam.days_left ?? 0, { duration: 1000 });
+  if (exam) {
+    countUp(document.getElementById("stat-days-left"), exam.days_left_precise ?? exam.days_left ?? 0, { duration: 1000 });
+    startExamCountdown(exam.total_seconds_left ?? 0);
+  }
+}
+
+// Sınava kalan süreyi saniyesine kadar canlı (her saniye) güncelleyen sayaç —
+// "heyecanı artırsın" diye eklendi. Sunucudan gelen tek bir anlık değerden
+// (total_seconds_left) başlayıp istemci tarafında saniyede bir geri sayar;
+// sayfa yeniden yüklendiğinde get_homepage'den taze değer alınır.
+let examCountdownTimer = null;
+function startExamCountdown(initialTotalSeconds) {
+  if (examCountdownTimer) clearInterval(examCountdownTimer);
+  let remaining = Math.max(0, Math.floor(initialTotalSeconds));
+
+  function render() {
+    const days = Math.floor(remaining / 86400);
+    const hours = Math.floor((remaining % 86400) / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const seconds = Math.floor(remaining % 60);
+    const daysEl = document.getElementById("stat-days-left");
+    const hoursEl = document.getElementById("stat-hours-left");
+    const minutesEl = document.getElementById("stat-minutes-left");
+    const secondsEl = document.getElementById("stat-seconds-left");
+    if (daysEl) daysEl.textContent = String(days);
+    if (hoursEl) hoursEl.textContent = String(hours).padStart(2, "0");
+    if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, "0");
+    if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, "0");
+  }
+
+  render();
+  examCountdownTimer = setInterval(() => {
+    if (remaining <= 0) {
+      clearInterval(examCountdownTimer);
+      return;
+    }
+    remaining -= 1;
+    render();
+  }, 1000);
 }
 
 function renderTopNews(data) {
