@@ -33,7 +33,14 @@
    büyük kısmı muhtemelen buradan geliyordu. */
 * , *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+/* html'e (yalnızca body'ye değil) overflow-x:hidden vermek önemli: bazı
+   mobil tarayıcılarda (özellikle iOS Safari) sayfanın kök kaydırma elemanı
+   <body> değil <html>'dir — sadece body'ye overflow:hidden vermek, dekoratif
+   negatif-konumlu elemanların (ör. .auth-blob, .ambient-orb) sayfayı yatayda
+   hafifçe "oynatmasını"/kaydırılabilir bırakmasını engellemeyebiliyordu.
+   Dikey eksen bilerek KISITLANMIYOR — kısa ekranlarda (ör. klavye açıkken)
+   sayfanın normal şekilde aşağı kaydırılabilmesi gerekiyor. */
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 /* Tailwind Preflight ayrıca <body>'nin varsayılan margin'ini de sıfırlar;
    bunsuz dar ekranlarda sayfanın kenarında ince ama fark edilir bir boşluk/

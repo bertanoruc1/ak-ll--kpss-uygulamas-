@@ -217,6 +217,7 @@
 .overflow-auto { overflow: auto; }
 .overflow-hidden { overflow: hidden; }
 .overflow-x-auto { overflow-x: auto; }
+.overflow-x-hidden { overflow-x: hidden; }
 .overflow-y-auto { overflow-y: auto; }
 .p-10 { padding: 2.5rem; }
 .p-2 { padding: 0.5rem; }
