@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Profil · KPSS Akıllı</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
-<link rel="stylesheet" href="css/tailwind-static.css?v=5" />
-<link rel="stylesheet" href="css/styles.css?v=5" />
+<link rel="stylesheet" href="css/tailwind-static.css?v=6" />
+<link rel="stylesheet" href="css/styles.css?v=6" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
@@ -19,7 +19,7 @@
 
         <!-- Başlık -->
         <div class="fadeIn">
-          <h1 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2">👤 Profil</h1>
+          <h1 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" class="icon-svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> Profil</h1>
           <p class="text-sm text-slate-500 mt-0.5">Hesap bilgilerini ve çalışma tercihlerini yönet.</p>
         </div>
 
@@ -32,7 +32,7 @@
 
         <!-- Hata durumu -->
         <div id="error-state" class="hidden card p-8 text-center">
-          <div class="text-4xl mb-3">😕</div>
+          <div class="mb-3 flex justify-center text-slate-300"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.4" class="icon-svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 16.318A4.486 4.486 0 0 0 12.016 15a4.486 4.486 0 0 0-3.198 1.318M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-13.5-3h.008v.008H7.5V9Zm9 0h.008v.008H16.5V9Z" /></svg></div>
           <p class="text-slate-600 font-medium mb-1">Profil yüklenirken bir sorun oluştu.</p>
           <button id="retry-btn" class="btn-primary px-5 py-2.5 mt-2">Tekrar Dene</button>
         </div>
@@ -42,8 +42,8 @@
   </div>
 
   <!-- Floating AI Assistant Button -->
-  <a href="assistant.html" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee); box-shadow: 0 8px 22px rgba(15,118,110,.5);" title="AI Asistan">
-    🤖
+  <a href="assistant.html" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee); box-shadow: 0 8px 22px rgba(15,118,110,.5);" title="AI Asistan">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" class="icon-svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
   </a>
 
   <script type="module" src="js/profile.js"></script>

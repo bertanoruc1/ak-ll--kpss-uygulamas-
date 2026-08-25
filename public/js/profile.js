@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth, signOut } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml } from "./ui.js?v=2";
 import { EXAM_TYPE_LABELS } from "./config.js";
 
 const auth = await requireAuth();

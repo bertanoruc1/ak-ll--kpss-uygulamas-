@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Profilini Oluştur · KPSS Akıllı</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
-<link rel="stylesheet" href="css/tailwind-static.css?v=5" />
-<link rel="stylesheet" href="css/styles.css?v=5" />
+<link rel="stylesheet" href="css/tailwind-static.css?v=6" />
+<link rel="stylesheet" href="css/styles.css?v=6" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
@@ -32,7 +32,8 @@
 
       <div>
         <label class="text-sm font-semibold text-slate-800 block mb-2">Günde kaç dakika çalışabilirsin?</label>
-        <input id="daily_minutes" type="number" class="input" value="120" />
+        <input id="daily_minutes" type="number" min="1" class="input" value="120" />
+        <p id="daily_minutes_hint" class="text-xs font-medium text-teal-600 mt-1.5">≈ 2 saat</p>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -72,6 +73,27 @@ const optionsBox = document.getElementById("exam-type-options");
 optionsBox.innerHTML = Object.entries(EXAM_TYPE_LABELS).map(([key, label]) => `
   <button type="button" data-key="${key}" class="exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${key === selectedExamType ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">${label}</button>
 `).join("");
+
+// Kullanıcı dakika girerken, altta canlı olarak "≈ X saat Y dakika" gösterip
+// kendini otomatik saate çevirsin diye (ör. 125 dk yazınca "≈ 2 saat 5 dakika").
+const dailyMinutesInput = document.getElementById("daily_minutes");
+const dailyMinutesHint = document.getElementById("daily_minutes_hint");
+function updateDailyMinutesHint() {
+  const total = Number(dailyMinutesInput.value);
+  if (!Number.isFinite(total) || total <= 0) {
+    dailyMinutesHint.textContent = "";
+    return;
+  }
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  let text = "≈ ";
+  if (hours > 0) text += `${hours} saat`;
+  if (minutes > 0) text += `${hours > 0 ? " " : ""}${minutes} dakika`;
+  if (hours === 0 && minutes === 0) text = "";
+  dailyMinutesHint.textContent = text;
+}
+dailyMinutesInput.addEventListener("input", updateDailyMinutesHint);
+updateDailyMinutesHint();
 
 optionsBox.querySelectorAll(".exam-type-btn").forEach(btn => {
   btn.addEventListener("click", () => {

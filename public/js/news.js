@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml, timeAgo, fmtDateTime } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml, timeAgo, fmtDateTime } from "./ui.js?v=2";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
 
 // Kategori rozetleri için renk paleti (koyu metin / açık zemin eşleşmeleri)

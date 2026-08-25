@@ -2,6 +2,12 @@
    tags in each page's <head> instead of @import, so it loads in parallel with
    this stylesheet rather than blocking behind it. */
 
+/* Modern SVG çizgi ikonlar (js/icons.js) — emoji tabanlı ikonların yerini aldı.
+   stroke="currentColor" kullandıkları için renklerini bulundukları elemandan
+   miras alırlar; burada sadece hizalama/boyut tutarlılığı sağlanıyor. */
+.icon-svg { display: block; flex-shrink: 0; }
+.nav-icon-chip svg, .bottom-icon svg { display: block; }
+
 :root {
   --brand-1: #14b8a6;
   --brand-2: #0ea5e9;

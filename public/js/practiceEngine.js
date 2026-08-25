@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { toast, escapeHtml, DIFFICULTY_LABELS, DIFFICULTY_COLORS, scoreColor } from "./ui.js";
+import { toast, escapeHtml, DIFFICULTY_LABELS, DIFFICULTY_COLORS, scoreColor } from "./ui.js?v=2";
 
 // Paylaşılan soru çözme motoru: hedef belirleme (kaç soruda bitecek),
 // soru getirme, cevaplama, sonuç ekranı, sonsuz döngü koruması ve — bir

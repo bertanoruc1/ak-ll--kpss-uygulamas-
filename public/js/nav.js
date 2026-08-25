@@ -1,27 +1,32 @@
 import { signOut } from "./auth.js";
+import { icon } from "./icons.js";
 
 // NOT: "Sorular" artık ayrı bir bölüm/sekme değil — her konunun içeriğiyle
 // birlikte, konu sayfasının (topic.html) içine gömülü olarak sunuluyor.
 // "Dersler"e girip bir konu seçtiğinde hem konu anlatımını hem de soru
 // çözme bölümünü aynı sayfada bulursun.
+//
+// İkonlar artık emoji değil, "./icons.js" içindeki modern SVG çizgi ikon
+// setinden isimle referans veriliyor (currentColor ile boyanıyor, böylece
+// hover/active renk geçişlerini otomatik miras alıyor).
 const LINKS = [
-  { href: "dashboard.html", icon: "🏠", label: "Ana Sayfa" },
-  { href: "subjects.html", icon: "📚", label: "Dersler" },
-  { href: "mistakes.html", icon: "❌", label: "Yanlışlarım" },
-  { href: "news.html", icon: "📰", label: "Haberler" },
-  { href: "exams.html", icon: "📅", label: "Sınav Takvimi" },
-  { href: "analytics.html", icon: "📊", label: "Analiz" },
-  { href: "notifications.html", icon: "🔔", label: "Bildirimler" },
-  { href: "assistant.html", icon: "🤖", label: "AI Asistan" },
-  { href: "profile.html", icon: "👤", label: "Profil" },
+  { href: "dashboard.html", icon: "home", label: "Ana Sayfa" },
+  { href: "subjects.html", icon: "book-open", label: "Dersler" },
+  { href: "mistakes.html", icon: "x-circle", label: "Yanlışlarım" },
+  { href: "news.html", icon: "newspaper", label: "Haberler" },
+  { href: "exams.html", icon: "calendar", label: "Sınav Takvimi" },
+  { href: "analytics.html", icon: "chart-bar", label: "Analiz" },
+  { href: "notifications.html", icon: "bell", label: "Bildirimler" },
+  { href: "assistant.html", icon: "sparkles", label: "AI Asistan" },
+  { href: "profile.html", icon: "user", label: "Profil" },
 ];
 
 // Mobil alt gezinme (4 ana sekme)
 const BOTTOM_LINKS = [
-  { href: "dashboard.html", icon: "🏠", label: "Ana Sayfa" },
-  { href: "subjects.html", icon: "📚", label: "Dersler" },
-  { href: "exams.html", icon: "📅", label: "Plan" },
-  { href: "profile.html", icon: "👤", label: "Profil" },
+  { href: "dashboard.html", icon: "home", label: "Ana Sayfa" },
+  { href: "subjects.html", icon: "book-open", label: "Dersler" },
+  { href: "exams.html", icon: "calendar", label: "Plan" },
+  { href: "profile.html", icon: "user", label: "Profil" },
 ];
 
 function mountAmbientBackground() {
@@ -45,7 +50,7 @@ export function mountNav(activeHref) {
     sidebar.innerHTML = `
       <div class="h-full flex flex-col">
         <div class="px-5 py-6 nav-brand">
-          <div class="nav-brand-mark">🎯</div>
+          <div class="nav-brand-mark">${icon("target", { size: 20 })}</div>
           <div>
             <div class="font-extrabold text-base text-slate-900 leading-tight">KPSS Akıllı</div>
             <div class="text-[11px] font-semibold text-teal-400 uppercase tracking-wide">Öğrenci Platformu</div>
@@ -54,12 +59,12 @@ export function mountNav(activeHref) {
         <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
           ${LINKS.map(l => `
             <a href="${l.href}" class="nav-link ${activeHref === l.href ? "active" : ""}">
-              <span class="nav-icon-chip">${l.icon}</span><span>${l.label}</span>
+              <span class="nav-icon-chip">${icon(l.icon, { size: 18 })}</span><span>${l.label}</span>
             </a>`).join("")}
         </nav>
         <div class="px-3 pb-5 pt-2 border-t border-slate-100 mt-2">
           <button id="sidebar-signout" type="button" class="nav-link w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600">
-            <span class="nav-icon-chip">🚪</span><span>Çıkış Yap</span>
+            <span class="nav-icon-chip">${icon("logout", { size: 18 })}</span><span>Çıkış Yap</span>
           </button>
         </div>
       </div>`;
@@ -71,7 +76,7 @@ export function mountNav(activeHref) {
       <div class="grid grid-cols-4">
         ${BOTTOM_LINKS.map(l => `
           <a href="${l.href}" class="bottom-link ${activeHref === l.href ? "active" : ""}">
-            <span class="bottom-icon">${l.icon}</span><span>${l.label}</span>
+            <span class="bottom-icon">${icon(l.icon, { size: 21 })}</span><span>${l.label}</span>
           </a>`).join("")}
       </div>`;
   }

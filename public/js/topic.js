@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js?v=2";
 import { createPracticeEngine } from "./practiceEngine.js";
 
 const auth = await requireAuth();

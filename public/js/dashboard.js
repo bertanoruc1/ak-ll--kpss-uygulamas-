@@ -1,9 +1,10 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor, countUp } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor, countUp } from "./ui.js?v=2";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
 import { ensurePushSubscription } from "./push.js";
+import { icon } from "./icons.js";
 
 const auth = await requireAuth();
 if (!auth) {
@@ -102,7 +103,7 @@ function renderHero(data) {
   el.innerHTML = `
     <div class="rounded-2xl p-6 sm:p-7 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #0f766e, #0284c7 45%, #22d3ee 100%); box-shadow: 0 24px 56px -16px rgba(15,118,110,.5);">
       <div class="absolute inset-0" style="background: radial-gradient(340px 220px at 105% -10%, rgba(255,255,255,.16), transparent 60%), radial-gradient(260px 200px at -10% 110%, rgba(255,255,255,.08), transparent 55%);"></div>
-      <div class="absolute -right-8 -bottom-10 text-9xl opacity-[0.08] select-none" style="pointer-events:none;">🎯</div>
+      <div class="absolute -right-8 -bottom-10 opacity-[0.08] select-none" style="pointer-events:none;">${icon("target", { size: 150, strokeWidth: 1 })}</div>
 
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-3">
@@ -110,15 +111,15 @@ function renderHero(data) {
             <p class="text-xs font-semibold text-teal-200 uppercase tracking-wide">${timeOfDayGreeting()}</p>
             <h1 class="text-2xl sm:text-3xl font-extrabold leading-tight mt-0.5">Merhaba, ${escapeHtml(data.greeting_name || "Öğrenci")} 👋</h1>
           </div>
-          <a href="notifications.html" class="relative shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl transition" style="background: rgba(255,255,255,.12); backdrop-filter: blur(6px);">
-            🔔${notifBadgeHtml()}
+          <a href="notifications.html" class="relative shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition" style="background: rgba(255,255,255,.12); backdrop-filter: blur(6px);">
+            ${icon("bell", { size: 20 })}${notifBadgeHtml()}
           </a>
         </div>
 
         <div class="flex items-center gap-2 mt-4 flex-wrap">
-          <span class="badge" style="background: rgba(255,255,255,.14); color: #fff;">🔥 <span id="stat-streak">0</span> gün seri</span>
-          <span class="badge badge-gold">✨ <span id="stat-xp">0</span> XP</span>
-          <span class="badge" style="background: rgba(255,255,255,.14); color: #fff;">🏅 Seviye ${data.level ?? 1}</span>
+          <span class="badge inline-flex items-center gap-1" style="background: rgba(255,255,255,.14); color: #fff;">${icon("fire", { size: 14 })} <span id="stat-streak">0</span> gün seri</span>
+          <span class="badge badge-gold inline-flex items-center gap-1">${icon("sparkles", { size: 14 })} <span id="stat-xp">0</span> XP</span>
+          <span class="badge inline-flex items-center gap-1" style="background: rgba(255,255,255,.14); color: #fff;">${icon("trophy", { size: 14 })} Seviye ${data.level ?? 1}</span>
         </div>
 
         <div class="mt-5 pt-5" style="border-top: 1px solid rgba(255,255,255,.14);">
@@ -140,7 +141,7 @@ function renderHero(data) {
               <p class="text-xs text-teal-200">${fmtDate(exam.exam_date)}${exam.exam_time ? " · " + exam.exam_time.slice(0,5) : ""}</p>
             </div>` : `
             <div class="flex items-center gap-3">
-              <span class="text-2xl">📅</span>
+              <span>${icon("calendar", { size: 26 })}</span>
               <div>
                 <p class="text-sm font-semibold">Sınav takvimi henüz belirlenmedi</p>
                 <a href="exams.html" class="text-xs font-semibold text-teal-200 hover:underline">Sınav Takvimine Git →</a>
@@ -227,7 +228,7 @@ function renderDailyTip() {
   const tip = DAILY_TIPS[dayOfYear(new Date()) % DAILY_TIPS.length];
   el.innerHTML = `
     <div class="card p-4 flex items-start gap-3" style="background: linear-gradient(135deg, #fef3c7, #fce7f3 120%);">
-      <div class="text-2xl shrink-0">💡</div>
+      <div class="shrink-0 text-amber-500">${icon("light-bulb", { size: 26 })}</div>
       <div class="min-w-0">
         <p class="text-xs font-bold text-amber-700 uppercase tracking-wide mb-0.5">Günün İpucu</p>
         <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(tip)}</p>
@@ -280,7 +281,7 @@ function renderTodayPriority(data) {
   if (!p || !p.has_priority) {
     el.innerHTML = `
       <div class="priority-card rounded-2xl p-6">
-        <div class="text-3xl mb-2">🎯</div>
+        <div class="mb-2 text-teal-500">${icon("target", { size: 30 })}</div>
         <p class="font-bold text-slate-800">Henüz yeterli veri yok, birkaç soru çöz.</p>
         <a href="subjects.html" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Derslere Git →</a>
       </div>`;
@@ -289,7 +290,7 @@ function renderTodayPriority(data) {
   el.innerHTML = `
     <div class="priority-card rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-2xl">⭐</span>
+        <span class="text-amber-400">${icon("star", { size: 22 })}</span>
         <span class="badge bg-white text-teal-700 border border-teal-100">Bugünün Önceliği</span>
       </div>
       <p class="text-xs font-semibold text-teal-500 uppercase tracking-wide">${escapeHtml(p.subject_name || "")} · ${escapeHtml(p.topic_name || "")}</p>
@@ -329,7 +330,7 @@ function openPlanModal() {
   overlay.style.backdropFilter = "blur(3px)";
   overlay.innerHTML = `
     <div class="card p-6 w-full fadeIn" style="max-width: 420px;">
-      <p class="text-lg font-extrabold text-slate-900">🗓️ Bugünkü Planını Ayarla</p>
+      <p class="text-lg font-extrabold text-slate-900 flex items-center gap-2">${icon("calendar", { size: 20 })} Bugünkü Planını Ayarla</p>
       <p class="text-sm text-slate-500 mt-1">Seçtiğin saat aralığının tamamı, farklı derslerle kapsamlı şekilde doldurulur.</p>
 
       <div class="grid grid-cols-2 gap-3 mt-5">
@@ -481,13 +482,13 @@ async function openTaskModal() {
   overlay.style.backdropFilter = "blur(3px)";
   overlay.innerHTML = `
     <div class="card p-6 w-full fadeIn" style="max-width: 440px; max-height: 88vh; overflow-y: auto;">
-      <p class="text-lg font-extrabold text-slate-900">📝 Bugün Yapılacak Görev Ekle</p>
+      <p class="text-lg font-extrabold text-slate-900 flex items-center gap-2">${icon("pencil", { size: 18 })} Bugün Yapılacak Görev Ekle</p>
       <p class="text-sm text-slate-500 mt-1">Ne zaman, hangi derste, hangi konuya çalışacağını belirle — saati gelince sana hatırlatalım.</p>
 
       <div class="mt-5">
         <label class="text-xs font-semibold text-slate-600 block mb-1.5">Görev Türü</label>
         <select id="task-type" class="input">
-          ${TASK_SESSION_TYPES.map((t) => `<option value="${t}">${SESSION_TYPE_ICONS[t] || ""} ${SESSION_TYPE_LABELS[t] || t}</option>`).join("")}
+          ${TASK_SESSION_TYPES.map((t) => `<option value="${t}">${SESSION_TYPE_LABELS[t] || t}</option>`).join("")}
         </select>
       </div>
 
@@ -515,7 +516,7 @@ async function openTaskModal() {
           <input id="task-end-time" type="time" class="input" />
         </div>
       </div>
-      <p id="task-overlap-warning" class="hidden text-xs font-semibold text-rose-600 mt-2 flex items-start gap-1">⚠️ <span></span></p>
+      <p id="task-overlap-warning" class="hidden text-xs font-semibold text-rose-600 mt-2 flex items-start gap-1">${icon("exclamation-triangle", { size: 14 })} <span></span></p>
 
       <div class="mt-3" id="task-question-target-wrap">
         <label class="text-xs font-semibold text-slate-600 block mb-1.5">Hedef Soru Sayısı <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
@@ -708,12 +709,12 @@ function renderScheduleTimeline(data) {
   if (sessions.length === 0) {
     el.innerHTML = `
       <div class="card p-6 text-center">
-        <div class="text-3xl mb-2">🗓️</div>
+        <div class="mb-2 flex justify-center text-slate-300">${icon("calendar", { size: 32 })}</div>
         <p class="font-semibold text-slate-700">Bugün için henüz bir plan yok.</p>
         <p class="text-sm text-slate-400 mt-1">Çalışma saatlerini seç, hemen bir plan oluşturalım.</p>
         <div class="flex items-center justify-center gap-2.5 mt-4 flex-wrap">
           <button id="generate-plan-btn" class="btn-primary inline-block px-5 py-2.5 text-sm">Bugünkü Planı Oluştur</button>
-          <button id="add-task-btn" class="btn-secondary inline-block px-5 py-2.5 text-sm">📝 Bugün Yapılacak Ekle</button>
+          <button id="add-task-btn" class="btn-secondary inline-flex items-center gap-1.5 px-5 py-2.5 text-sm">${icon("pencil", { size: 14 })} Bugün Yapılacak Ekle</button>
         </div>
       </div>`;
     document.getElementById("generate-plan-btn").addEventListener("click", () => openPlanModal());
@@ -726,8 +727,8 @@ function renderScheduleTimeline(data) {
       <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <p class="font-bold text-slate-900">Bugünün Programı</p>
         <div class="flex items-center gap-3">
-          <button id="add-task-btn" class="text-xs font-semibold text-teal-600 hover:underline">📝 Bugün Yapılacak Ekle</button>
-          <button id="replan-btn" class="text-xs font-semibold text-teal-600 hover:underline">⚙️ Saatleri Ayarla</button>
+          <button id="add-task-btn" class="text-xs font-semibold text-teal-600 hover:underline inline-flex items-center gap-1">${icon("pencil", { size: 13 })} Bugün Yapılacak Ekle</button>
+          <button id="replan-btn" class="text-xs font-semibold text-teal-600 hover:underline inline-flex items-center gap-1">${icon("cog", { size: 13 })} Saatleri Ayarla</button>
         </div>
       </div>
       <div class="space-y-0">
@@ -742,7 +743,7 @@ function renderScheduleTimeline(data) {
                 <div class="rounded-xl border ${overlapIds.has(s.id) ? "border-rose-200 bg-rose-50/40" : "border-slate-100"} group-hover:border-teal-200 group-hover:bg-teal-50/40 transition p-3">
                   <div class="flex items-start justify-between gap-2">
                     <div class="flex items-center gap-2 min-w-0">
-                      <span class="text-lg shrink-0">${SESSION_TYPE_ICONS[s.session_type] || "📌"}</span>
+                      <span class="shrink-0 text-teal-500">${icon(SESSION_TYPE_ICONS[s.session_type] || "book-open-alt", { size: 18 })}</span>
                       <div class="min-w-0">
                         <p class="text-xs font-semibold text-slate-400">${SESSION_TYPE_LABELS[s.session_type] || s.session_type}${s.is_manual ? " · kendi eklediğin görev" : ""}</p>
                         <p class="text-sm font-bold text-slate-900 truncate">
@@ -753,14 +754,14 @@ function renderScheduleTimeline(data) {
                     <span class="badge ${STATUS_CLASSES[s.status] || "bg-slate-100 text-slate-500"} shrink-0">${STATUS_LABELS[s.status] || s.status}</span>
                   </div>
                   <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                    <span>⏰ ${shortTime(s.planned_start)}${s.planned_end ? "–" + shortTime(s.planned_end) : ""}</span>
-                    ${s.duration_minutes ? `<span>⏱ ${s.duration_minutes} dk</span>` : ""}
-                    ${s.question_target ? `<span>🎯 ${s.question_target} soru</span>` : ""}
+                    <span class="inline-flex items-center gap-1">${icon("clock", { size: 13 })} ${shortTime(s.planned_start)}${s.planned_end ? "–" + shortTime(s.planned_end) : ""}</span>
+                    ${s.duration_minutes ? `<span class="inline-flex items-center gap-1">${icon("clock", { size: 13 })} ${s.duration_minutes} dk</span>` : ""}
+                    ${s.question_target ? `<span class="inline-flex items-center gap-1">${icon("target", { size: 13 })} ${s.question_target} soru</span>` : ""}
                   </div>
-                  ${overlapIds.has(s.id) ? `<p class="text-xs font-semibold text-rose-600 mt-2 flex items-center gap-1">⚠️ Bu görev, saat olarak başka bir görevle çakışıyor</p>` : ""}
+                  ${overlapIds.has(s.id) ? `<p class="text-xs font-semibold text-rose-600 mt-2 flex items-center gap-1">${icon("exclamation-triangle", { size: 14 })} Bu görev, saat olarak başka bir görevle çakışıyor</p>` : ""}
                 </div>
               </a>
-              ${s.is_manual ? `<button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">🗑️</button>` : ""}
+              ${s.is_manual ? `<button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">${icon("trash", { size: 16 })}</button>` : ""}
             </div>
           </div>
         `).join("")}
@@ -786,7 +787,7 @@ function renderSuccessRate(data) {
         <p class="text-sm font-semibold text-slate-500">Genel Başarı Oranı</p>
         <p class="text-4xl font-extrabold mt-1" style="color: ${scoreColor(rate)};">%<span id="stat-success-rate">0</span></p>
       </div>
-      <div class="text-4xl">📊</div>
+      <div class="text-teal-400">${icon("chart-bar", { size: 34 })}</div>
     </div>`;
   countUp(document.getElementById("stat-success-rate"), Math.round(rate), { duration: 1000 });
 }

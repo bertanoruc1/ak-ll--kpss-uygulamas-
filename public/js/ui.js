@@ -41,7 +41,9 @@ export const LEVEL_COLORS = { baslangic: "#dc2626", gelistirilmeli: "#f97316", o
 export const DIFFICULTY_LABELS = { kolay: "Kolay", orta: "Orta", zor: "Zor" };
 export const DIFFICULTY_COLORS = { kolay: "#059669", orta: "#d97706", zor: "#dc2626" };
 export const SESSION_TYPE_LABELS = { konu_ogrenme: "Konu Öğrenme", soru_cozme: "Soru Çözme", tekrar: "Tekrar", mola: "Mola" };
-export const SESSION_TYPE_ICONS = { konu_ogrenme: "📖", soru_cozme: "✏️", tekrar: "🔁", mola: "☕" };
+// Değerler artık emoji değil, js/icons.js'teki modern SVG ikon setinin isimleri
+// (kullanım yerinde icon(SESSION_TYPE_ICONS[type]) ile render edilir).
+export const SESSION_TYPE_ICONS = { konu_ogrenme: "book-open-alt", soru_cozme: "pencil", tekrar: "arrow-path", mola: "coffee" };
 
 export function scoreColor(score) {
   if (score == null) return "#94a3b8";

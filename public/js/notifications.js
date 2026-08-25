@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml, timeAgo } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml, timeAgo } from "./ui.js?v=2";
 import { NOTIFICATION_PRIORITY_LABELS, NOTIFICATION_PRIORITY_COLORS } from "./config.js";
 
 const auth = await requireAuth();

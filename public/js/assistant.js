@@ -1,7 +1,8 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js";
-import { toast, escapeHtml } from "./ui.js";
+import { mountNav } from "./nav.js?v=2";
+import { toast, escapeHtml } from "./ui.js?v=2";
+import { icon } from "./icons.js";
 
 const auth = await requireAuth();
 if (!auth) {
@@ -43,7 +44,7 @@ function bubbleHtml(msg) {
   }
   return `
     <div class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">${icon("sparkles", { size: 16 })}</div>
       <div class="max-w-[80%] bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-slate-700 shadow-sm">
         ${escapeHtml(msg.text)}
       </div>
@@ -53,7 +54,7 @@ function bubbleHtml(msg) {
 function typingHtml() {
   return `
     <div id="typing-indicator" class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">${icon("sparkles", { size: 16 })}</div>
       <div class="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>
@@ -69,7 +70,7 @@ function renderMessages() {
 function emptyStateHtml() {
   return `
     <div class="text-center py-10 fadeIn">
-      <div class="text-4xl mb-2">🤖</div>
+      <div class="mb-2 flex justify-center text-teal-500">${icon("sparkles", { size: 34 })}</div>
       <p class="text-slate-500 text-sm">Merhaba! Bana bir konu/ders adı, "bugün ne çalışmalıyım", "başarı oranım", "seviyem" ya da "motivasyona ihtiyacım var" gibi istediğin gibi sorabilirsin — belirli kalıplara bağlı değilim.</p>
     </div>`;
 }
