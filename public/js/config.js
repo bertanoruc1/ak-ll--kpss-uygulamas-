@@ -20,6 +20,7 @@ export const NEWS_CATEGORY_LABELS = {
   osym: "ÖSYM", kpss: "KPSS", basvuru: "Başvuru", sinav_takvimi: "Sınav Takvimi",
   kilavuz: "Kılavuz", sonuc: "Sonuç", tercih: "Tercih", yerlestirme: "Yerleştirme",
   mufredat: "Müfredat", ders: "Ders", genel_egitim: "Genel Eğitim", onemli_duyuru: "Önemli Duyuru",
+  kaynak_kampanya: "Kaynak Kampanyası",
 };
 
 export const NOTIFICATION_PRIORITY_LABELS = { kritik: "Kritik", onemli: "Önemli", normal: "Normal", dusuk: "Düşük" };

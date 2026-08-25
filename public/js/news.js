@@ -18,6 +18,7 @@ const CATEGORY_COLORS = {
   ders: "bg-lime-50 text-lime-700",
   genel_egitim: "bg-slate-100 text-slate-700",
   onemli_duyuru: "bg-rose-50 text-rose-700",
+  kaynak_kampanya: "bg-pink-50 text-pink-700",
 };
 
 let allNews = [];

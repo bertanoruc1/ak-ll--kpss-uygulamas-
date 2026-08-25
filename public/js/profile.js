@@ -26,7 +26,39 @@ function examTypeOptions(selected) {
   ).join("");
 }
 
-function render(student, gami) {
+// Rozetler (achievements) veritabanında zaten arka planda kazanılıyordu
+// (bkz. check_achievements RPC'si) ama hiçbir sayfa bunu göstermiyordu —
+// kullanıcı rozet kazandığını hiç fark etmiyordu. Artık burada gösteriliyor.
+const ACHIEVEMENT_ICONS = {
+  ilk_soru: "🥇",
+  yuz_soru: "💯",
+  bin_soru: "🌙",
+  yedi_gun_seri: "🔥",
+  otuz_gun_seri: "🛡️",
+};
+
+function renderAchievements(achievements) {
+  if (!achievements || achievements.length === 0) return "";
+  const earnedCount = achievements.filter((a) => a.earned).length;
+  return `
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-1">
+        <p class="font-bold text-slate-900">🏆 Rozetlerim</p>
+        <span class="text-xs font-semibold text-indigo-600">${earnedCount}/${achievements.length}</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Çalıştıkça yeni rozetler kazanırsın.</p>
+      <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+        ${achievements.map((a) => `
+          <div class="flex flex-col items-center text-center gap-1 p-2 rounded-xl ${a.earned ? "bg-amber-50" : "bg-slate-50 opacity-50"}" title="${escapeHtml(a.description || "")}">
+            <div class="text-3xl ${a.earned ? "" : "grayscale"}">${ACHIEVEMENT_ICONS[a.code] || "🏅"}</div>
+            <p class="text-[11px] font-semibold ${a.earned ? "text-slate-800" : "text-slate-400"} leading-tight">${escapeHtml(a.name)}</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>`;
+}
+
+function render(student, gami, achievements) {
   const name = profile?.full_name || "";
   const email = profile?.email || user.email || "";
 
@@ -61,6 +93,8 @@ function render(student, gami) {
           <p class="text-xs text-slate-500">XP</p>
         </div>
       </div>
+
+      ${renderAchievements(achievements)}
 
       <!-- Düzenleme formu -->
       <form id="profile-form" class="card p-6 space-y-5">
@@ -157,9 +191,10 @@ async function handleSubmit(e) {
 
 async function loadProfile() {
   errorEl.classList.add("hidden");
-  const [{ data: student, error: studentErr }, { data: gami, error: gamiErr }] = await Promise.all([
+  const [{ data: student, error: studentErr }, { data: gami }, { data: achievements }] = await Promise.all([
     supabase.from("students").select("*").eq("user_id", user.id).single(),
     supabase.from("user_gamification").select("*").eq("user_id", user.id).single(),
+    supabase.rpc("get_my_achievements"),
   ]);
 
   if (studentErr) {
@@ -168,7 +203,7 @@ async function loadProfile() {
     errorEl.classList.remove("hidden");
     return;
   }
-  render(student, gami);
+  render(student, gami, achievements || []);
 }
 
 document.getElementById("retry-btn").addEventListener("click", loadProfile);

@@ -156,6 +156,48 @@ function startExamCountdown(initialTotalSeconds) {
   }, 1000);
 }
 
+// "Öğrenci sıkılmasın" isteği için: her gün değişen (rastgele değil,
+// tarihe göre deterministik — sayfa her yenilendiğinde aynı gün içinde
+// zıplamıyor) bir motivasyon/çalışma ipucu kartı. Basit, istemci taraflı —
+// ekstra bir sorgu gerektirmiyor, sayfa hep bir şey söylüyor.
+const DAILY_TIPS = [
+  "Pomodoro tekniğini dene: 25 dakika kesintisiz çalış, 5 dakika mola ver. 4 tur sonunda uzun bir mola hak ettin.",
+  "Yanlış yaptığın sorulara dönmek, yeni soru çözmekten çoğu zaman daha değerlidir — aynı hatayı sınavda tekrarlama.",
+  "Kısa ama her gün çalışmak, ara sıra yapılan uzun maratonlardan daha kalıcı öğrenme sağlar.",
+  "Bir konuyu bitirdikten sonra kendi cümlelerinle özetlemeyi dene — gerçekten anladığını bu şekilde test edersin.",
+  "Zor geldiği için ertelediğin konuyu bugün 10 dakikalığına aç. Başlamak, bitirmekten daha zordur.",
+  "Sesli tekrar (kendi kendine anlatmak), sessiz okumaktan çok daha etkili bir hatırlama yöntemidir.",
+  "Uyku, öğrendiklerini kalıcı hafızaya taşır — gece geç saatlere kadar çalışmak yerine düzenli uyumaya öncelik ver.",
+  "Bugün çözdüğün sorulardan en çok hangi konuda zorlandığını fark ettiysen, yarının ilk işi o olsun.",
+  "Küçük hedefler koy: '3 saat çalışacağım' yerine '20 soru çözeceğim' daha somut ve motive edicidir.",
+  "Sınav gününe kaç gün kaldığını biliyorsun — bugünü, o günden geriye saydığında pişman olmayacağın şekilde geçir.",
+  "Zayıf olduğun konuları gizlemek yerine öne çıkar: en çok puanı, en zayıf konunu güçlendirerek kazanırsın.",
+  "Bir soruyu yanlış yaptığında sadece doğru cevabı değil, neden yanlış düşündüğünü de not al.",
+  "Telefonunu erişemeyeceğin bir mesafeye koyup 25 dakika çalışmayı dene — dikkat dağınıklığının çoğu oradan gelir.",
+  "Haftalık ilerlemene bak: küçük görünen günlük adımlar, hafta sonunda büyük bir fark yaratıyor.",
+  "Bugün moralin düşükse bile 5 soru çözmek, hiç çözmemekten sonsuz kat daha iyidir.",
+];
+
+function dayOfYear(d) {
+  const start = new Date(d.getFullYear(), 0, 0);
+  const diff = d - start;
+  return Math.floor(diff / 86400000);
+}
+
+function renderDailyTip() {
+  const el = document.getElementById("daily-tip");
+  if (!el) return;
+  const tip = DAILY_TIPS[dayOfYear(new Date()) % DAILY_TIPS.length];
+  el.innerHTML = `
+    <div class="card p-4 flex items-start gap-3" style="background: linear-gradient(135deg, #fef3c7, #fce7f3 120%);">
+      <div class="text-2xl shrink-0">💡</div>
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-amber-700 uppercase tracking-wide mb-0.5">Günün İpucu</p>
+        <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(tip)}</p>
+      </div>
+    </div>`;
+}
+
 function renderTopNews(data) {
   const el = document.getElementById("top-news");
   const news = data.top_news;
@@ -691,6 +733,7 @@ async function loadHomepage() {
     return;
   }
   renderHero(data);
+  renderDailyTip();
   renderTopNews(data);
   renderTodayStatus(data);
   renderTodayPriority(data);
