@@ -79,11 +79,23 @@ body {
 
 ::selection { background: rgba(20,184,166,.2); }
 
-/* Scrollbars */
-* { scrollbar-width: thin; scrollbar-color: #99f6e4 transparent; }
-*::-webkit-scrollbar { width: 8px; height: 8px; }
-*::-webkit-scrollbar-thumb { background: #99f6e4; border-radius: 999px; }
-*::-webkit-scrollbar-track { background: transparent; }
+/* Scrollbars — SADECE masaüstünde (min-width:768px) özelleştiriliyor.
+   Videoyla doğrulanan gerçek mobil hata buradaydı: `scrollbar-width:thin` +
+   `scrollbar-color`, evrensel `*` seçiciyle <html>/<body> dahil HER elemana
+   uygulanınca, Android Chrome'u varsayılan "overlay" (görünmez, yer kaplamayan)
+   kaydırma çubuğundan KLASİK (yer kaplayan) bir kaydırma çubuğuna geçirdi —
+   bu da sayfa içeriğinin cihaz genişliğinden birkaç piksel dar render
+   edilmesine ve sağ kenarda hep açık kalan, thumb rengiyle (teal) boyalı ince
+   dikey bir şeride yol açtı (kullanıcının videosunda görülen tam olarak bu).
+   Mobilde/dokunmatik ekranlarda tarayıcının kendi varsayılan (görünmez)
+   scrollbar davranışına dokunmuyoruz; özel ince/renkli scrollbar sadece fare
+   ile kullanılan masaüstü genişliklerinde uygulanıyor. */
+@media (min-width: 768px) {
+  * { scrollbar-width: thin; scrollbar-color: #99f6e4 transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: #99f6e4; border-radius: 999px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+}
 
 .app-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
 
