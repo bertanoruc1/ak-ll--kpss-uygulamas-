@@ -26,6 +26,11 @@ const STARTER_PROMPTS = [
 
 const messages = [];
 let sending = false;
+// Bir kere "gerçek LLM'e bağlı değil" (ai-chat henüz deploy/config
+// edilmemiş) olduğu anlaşılınca, aynı sayfa oturumunda her mesajda tekrar
+// tekrar denemek yerine doğrudan eski kural tabanlı RPC'yi kullan — hem
+// gereksiz ağ isteğini önler hem de kullanıcı beklemez.
+let llmUnavailable = false;
 
 function bubbleHtml(msg) {
   if (msg.role === "user") {
@@ -85,6 +90,36 @@ function scrollToBottom() {
   chatScroll.scrollTop = chatScroll.scrollHeight;
 }
 
+// Gerçek bir Claude modeline bağlı serbest sohbet — ai-chat Edge Function'ı
+// çağırır, son birkaç mesajı (konuşma geçmişi) de yollar ki bağlamı takip
+// edebilsin. Fonksiyon henüz deploy/config edilmediyse (llm_not_configured)
+// SESSİZCE eski kural tabanlı ai_assistant_ask RPC'sine döner — sayfa hiçbir
+// zaman kırılmaz, sadece "akıllılık seviyesi" ayarlanana kadar eskisi gibi çalışır.
+async function askLlm(trimmed) {
+  const history = messages
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .slice(-16)
+    .map((m) => ({ role: m.role, text: m.text }));
+
+  const { data, error } = await supabase.functions.invoke("ai-chat", {
+    body: { message: trimmed, history },
+  });
+
+  if (error || !data || data.error) {
+    if (data?.error === "llm_not_configured" || error) {
+      llmUnavailable = true;
+    }
+    return null;
+  }
+  return data.reply || null;
+}
+
+async function askRuleBasedFallback(trimmed) {
+  const { data, error } = await supabase.rpc("ai_assistant_ask", { p_message: trimmed });
+  if (error) return null;
+  return data?.response || null;
+}
+
 async function sendMessage(text) {
   const trimmed = (text || "").trim();
   if (!trimmed || sending) return;
@@ -99,15 +134,21 @@ async function sendMessage(text) {
   chatList.insertAdjacentHTML("beforeend", typingHtml());
   scrollToBottom();
 
-  const { data, error } = await supabase.rpc("ai_assistant_ask", { p_message: trimmed });
+  let replyText = null;
+  if (!llmUnavailable) {
+    replyText = await askLlm(trimmed);
+  }
+  if (replyText === null) {
+    replyText = await askRuleBasedFallback(trimmed);
+  }
 
   document.getElementById("typing-indicator")?.remove();
 
-  if (error) {
+  if (replyText === null) {
     toast("Asistan şu anda yanıt veremiyor.", "error");
     messages.push({ role: "assistant", text: "Üzgünüm, şu anda yanıt veremiyorum. Lütfen tekrar dener misin?" });
   } else {
-    messages.push({ role: "assistant", text: data?.response || "Bir yanıt alınamadı." });
+    messages.push({ role: "assistant", text: replyText });
   }
 
   renderMessages();

@@ -24,7 +24,32 @@
 
 * { font-family: 'Inter', system-ui, sans-serif; }
 
+/* Tailwind Preflight'ın normalde sağladığı box-sizing:border-box resetinin
+   eksikliği: `.input` gibi width:100% + padding/border içeren birçok eleman,
+   padding+border kadar taşıyordu (content-box varsayılanı yüzünden). Bu,
+   dar (mobil) ekranlarda inputların/kartların konteynerini yatayda taşmasına
+   ve dokunma hedeflerinin kaymasına yol açan, geniş masaüstü ekranlarda ise
+   fark edilmeyen klasik bir hataydı — "mobil görünümde arıza" şikayetinin
+   büyük kısmı muhtemelen buradan geliyordu. */
+* , *::before, *::after { box-sizing: border-box; }
+
 html { scroll-behavior: smooth; }
+
+/* Tailwind Preflight ayrıca <body>'nin varsayılan margin'ini de sıfırlar;
+   bunsuz dar ekranlarda sayfanın kenarında ince ama fark edilir bir boşluk/
+   taşma oluşabiliyordu. */
+body { margin: 0; }
+
+/* iOS Safari'de <input>/<select>/<textarea> varsayılan font-size 16px'in
+   altındaysa, bir forma dokunulduğunda tarayıcı sayfayı otomatik yakınlaştırır
+   (kullanıcı sonra elle uzaklaştırmak zorunda kalır) — `.input` 0.9rem (14.4px)
+   kullandığı için bu her formda (görev ekle, plan ayarla, profil, giriş/kayıt)
+   oluyordu. 16px'e sabitleyerek bu istenmeyen zoom'u engelliyoruz.
+   (bkz. https://webkit.org/blog/7929/designing-websites-for-iphone-x/ ve
+   iOS'un uzun süredir bilinen "16px input zoom" davranışı) */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+}
 
 /* Tailwind CDN normally ships a Preflight reset that strips the browser's
    default underline/color from <a> tags. The hand-rolled static CSS doesn't
