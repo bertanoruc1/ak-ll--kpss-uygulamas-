@@ -64,7 +64,7 @@ async function loadMistakes() {
     if (!groups.has(subjectName)) {
       groups.set(subjectName, {
         icon: m.topics?.subjects?.icon || "📘",
-        color: m.topics?.subjects?.color || "#6366f1",
+        color: m.topics?.subjects?.color || "#14b8a6",
         items: [],
       });
     }
@@ -104,7 +104,7 @@ function renderMistakeItem(m) {
     <div class="card p-4 fadeIn">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <p class="text-xs font-semibold text-indigo-500">${escapeHtml(topicName)}</p>
+          <p class="text-xs font-semibold text-teal-500">${escapeHtml(topicName)}</p>
           <p class="text-sm font-medium text-slate-800 mt-1 leading-relaxed">${escapeHtml(truncate(q.question_text || "", 180))}</p>
         </div>
         <span class="text-xs text-slate-400 shrink-0">${timeAgo(m.created_at)}</span>
@@ -119,7 +119,7 @@ function renderMistakeItem(m) {
         <div id="${detailId}" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
           ${q.explanation ? `<p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q.explanation)}</p>` : ""}
           ${q.detailed_solution ? `<p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(q.detailed_solution)}</p>` : ""}
-          ${q.video_solution_url ? `<a href="${escapeHtml(q.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline">▶️ Video çözümü izle</a>` : ""}
+          ${q.video_solution_url ? `<a href="${escapeHtml(q.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline">▶️ Video çözümü izle</a>` : ""}
         </div>` : ""}
     </div>`;
 }

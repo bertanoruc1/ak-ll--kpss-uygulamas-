@@ -48,7 +48,7 @@ export function mountNav(activeHref) {
           <div class="nav-brand-mark">🎯</div>
           <div>
             <div class="font-extrabold text-base text-slate-900 leading-tight">KPSS Akıllı</div>
-            <div class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wide">Öğrenci Platformu</div>
+            <div class="text-[11px] font-semibold text-teal-400 uppercase tracking-wide">Öğrenci Platformu</div>
           </div>
         </div>
         <nav class="flex-1 px-3 space-y-1 overflow-y-auto">

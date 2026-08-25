@@ -99,12 +99,12 @@ async function loadSubjectsList() {
             .filter((v) => v != null);
           const completed = subjTopics.filter((t) => (scoreByTopic.get(t.id) ?? 0) >= 60).length;
           const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-          const color = s.color || "#6366f1";
+          const color = s.color || "#14b8a6";
           return `
           <a href="subjects.html?subject=${s.id}" class="card p-5 fadeIn hover:shadow-md transition group">
             <div class="flex items-start justify-between gap-2">
               <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style="background:${color}1a;">${escapeHtml(s.icon || "📘")}</div>
-              <span class="text-xs font-semibold text-slate-400 group-hover:text-indigo-600 transition">→</span>
+              <span class="text-xs font-semibold text-slate-400 group-hover:text-teal-600 transition">→</span>
             </div>
             <p class="font-bold text-slate-900 mt-3">${escapeHtml(s.name)}</p>
             ${s.description ? `<p class="text-xs text-slate-400 mt-0.5 line-clamp-2">${escapeHtml(s.description)}</p>` : ""}
@@ -139,9 +139,9 @@ async function loadTopicsForSubject(id) {
   }
 
   headerEl.innerHTML = `
-    <a href="subjects.html" class="text-sm font-semibold text-indigo-600 hover:underline">← Derslere Dön</a>
+    <a href="subjects.html" class="text-sm font-semibold text-teal-600 hover:underline">← Derslere Dön</a>
     <div class="flex items-center gap-3 mt-3">
-      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style="background:${(subject.color || "#6366f1")}1a;">${escapeHtml(subject.icon || "📘")}</div>
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style="background:${(subject.color || "#14b8a6")}1a;">${escapeHtml(subject.icon || "📘")}</div>
       <div>
         <h1 class="text-xl font-extrabold text-slate-900">${escapeHtml(subject.name)}</h1>
         ${subject.description ? `<p class="text-sm text-slate-500 mt-0.5">${escapeHtml(subject.description)}</p>` : ""}

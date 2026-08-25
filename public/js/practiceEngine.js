@@ -24,7 +24,7 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
     return `
       <div class="flex items-center justify-between mb-4">
         <div>
-          ${backHref ? `<a href="${backHref}" class="text-sm font-semibold text-indigo-600 hover:underline">← ${escapeHtml(topicName || "Geri")}</a>` : `<p class="text-sm font-bold text-slate-700">${escapeHtml(topicName || "")}</p>`}
+          ${backHref ? `<a href="${backHref}" class="text-sm font-semibold text-teal-600 hover:underline">← ${escapeHtml(topicName || "Geri")}</a>` : `<p class="text-sm font-bold text-slate-700">${escapeHtml(topicName || "")}</p>`}
           <p class="text-xs text-slate-400 mt-0.5">Soru Çözme Oturumu</p>
         </div>
         <div class="text-right">
@@ -110,7 +110,7 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
         <p class="font-semibold text-slate-900 leading-relaxed whitespace-pre-line">${escapeHtml(q.question_text)}</p>
         <div id="pe-choices" class="space-y-2 mt-4">
           ${(q.choices || []).map((c) => `
-            <button class="choice-btn w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 transition text-sm font-medium text-slate-700" data-choice="${c.id}">
+            <button class="choice-btn w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 transition text-sm font-medium text-slate-700" data-choice="${c.id}">
               ${escapeHtml(c.choice_text)}
             </button>`).join("")}
         </div>
@@ -229,7 +229,7 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
     const parts = [];
     if (data.explanation) parts.push(`<p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(data.explanation)}</p>`);
     if (data.detailed_solution) parts.push(`<p class="text-sm text-slate-600 leading-relaxed mt-2 whitespace-pre-line">${escapeHtml(data.detailed_solution)}</p>`);
-    if (data.video_solution_url) parts.push(`<a href="${escapeHtml(data.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline mt-2">▶️ Video çözümü izle</a>`);
+    if (data.video_solution_url) parts.push(`<a href="${escapeHtml(data.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline mt-2">▶️ Video çözümü izle</a>`);
 
     box.innerHTML = parts.length ? parts.join("") : `<p class="text-sm text-slate-400 italic">Açıklama eklenmemiş.</p>`;
   }

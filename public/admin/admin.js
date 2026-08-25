@@ -75,7 +75,7 @@ function toDateInputValue(v) {
 function renderTabsNav() {
   tabsEl.innerHTML = TABS.map(
     (t) => `<button data-tab="${t.id}" class="tab-btn px-3 py-2.5 border-b-2 whitespace-nowrap transition ${
-      state.tab === t.id ? "border-indigo-600 text-indigo-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
+      state.tab === t.id ? "border-teal-600 text-teal-600 font-bold" : "border-transparent text-slate-500 hover:text-slate-700"
     }">${t.icon} ${t.label}</button>`
   ).join("");
   tabsEl.querySelectorAll(".tab-btn").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
@@ -236,7 +236,7 @@ function examCardHtml(e) {
     <div class="card p-5 fadeIn">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <span class="badge bg-indigo-50 text-indigo-700">${escapeHtml(typeLabel)}</span>
+          <span class="badge bg-teal-50 text-teal-700">${escapeHtml(typeLabel)}</span>
           ${!e.is_active ? `<span class="badge bg-slate-100 text-slate-500 ml-1">Pasif</span>` : ""}
           <p class="font-bold text-slate-900 mt-2">${escapeHtml(e.name)}</p>
         </div>
@@ -250,7 +250,7 @@ function examCardHtml(e) {
         <div>🎯 Güven: <strong>%${Math.round((e.confidence ?? 1) * 100)}</strong></div>
         <div>🔢 Versiyon: <strong>${e.version ?? 1}</strong></div>
         <div>🕓 Son Doğrulama: <strong>${e.last_verified_at ? timeAgo(e.last_verified_at) : "—"}</strong></div>
-        <div class="col-span-2 sm:col-span-3">🔗 Kaynak: <strong>${escapeHtml(e.source || "—")}</strong> ${e.source_url ? `· <a href="${escapeHtml(e.source_url)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">bağlantı</a>` : ""}</div>
+        <div class="col-span-2 sm:col-span-3">🔗 Kaynak: <strong>${escapeHtml(e.source || "—")}</strong> ${e.source_url ? `· <a href="${escapeHtml(e.source_url)}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">bağlantı</a>` : ""}</div>
       </div>
       ${isEditing ? examEditFormHtml(e) : ""}
     </div>`;
@@ -459,7 +459,7 @@ function subjectNewFormHtml() {
         <input name="name" required class="input" placeholder="Ders adı" />
         <input name="slug" required class="input" placeholder="slug (örn. genel-yetenek)" />
         <input name="icon" class="input" placeholder="İkon (emoji)" />
-        <input name="color" class="input" placeholder="Renk (#6366f1)" />
+        <input name="color" class="input" placeholder="Renk (#14b8a6)" />
         <input name="weight" type="number" step="0.01" class="input" placeholder="Ağırlık" />
         <input name="order_index" type="number" class="input" placeholder="Sıra" />
       </div>
@@ -505,7 +505,7 @@ function subjectCardHtml(s) {
     <div class="card p-5 fadeIn">
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style="background:${s.color || "#6366f1"}1a;">${escapeHtml(s.icon || "📘")}</div>
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style="background:${s.color || "#14b8a6"}1a;">${escapeHtml(s.icon || "📘")}</div>
           <div class="min-w-0">
             <p class="font-bold text-slate-900 truncate">${escapeHtml(s.name)}</p>
             <p class="text-xs text-slate-400">${escapeHtml(EXAM_TYPE_LABELS[s.exam_type] || s.exam_type)} · ağırlık ${s.weight ?? "—"} · sıra ${s.order_index ?? "—"}</p>
@@ -835,7 +835,7 @@ async function loadQuestionsForTopic(root) {
       <div class="card p-5 fadeIn">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <span class="badge bg-indigo-50 text-indigo-700">${escapeHtml(DIFFICULTY_LABELS[q.difficulty] || q.difficulty)}</span>
+            <span class="badge bg-teal-50 text-teal-700">${escapeHtml(DIFFICULTY_LABELS[q.difficulty] || q.difficulty)}</span>
             ${q.kazanim ? `<span class="text-xs text-slate-400 ml-2">${escapeHtml(q.kazanim)}</span>` : ""}
             <p class="font-semibold text-slate-900 mt-2 whitespace-pre-line">${escapeHtml(q.question_text)}</p>
           </div>
@@ -971,9 +971,9 @@ function newsRowHtml(n) {
     <div class="card p-4 fadeIn">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <span class="badge bg-indigo-50 text-indigo-700">${escapeHtml(NEWS_CATEGORY_LABELS[n.category] || n.category)}</span>
+          <span class="badge bg-teal-50 text-teal-700">${escapeHtml(NEWS_CATEGORY_LABELS[n.category] || n.category)}</span>
           ${n.source_trust ? `<span class="badge ${n.source_trust === "resmi" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"} ml-1">${n.source_trust === "resmi" ? "Resmi" : "Destekleyici"}</span>` : ""}
-          ${n.is_learning_content ? `<span class="badge bg-violet-50 text-violet-700 ml-1">Öğrenme İçeriği</span>` : ""}
+          ${n.is_learning_content ? `<span class="badge bg-sky-50 text-sky-700 ml-1">Öğrenme İçeriği</span>` : ""}
           <p class="font-bold text-slate-900 mt-2">${escapeHtml(n.title)}</p>
           ${n.summary ? `<p class="text-sm text-slate-500 mt-1">${escapeHtml(n.summary)}</p>` : ""}
           <p class="text-xs text-slate-400 mt-1">${fmtDateTime(n.created_at)} ${n.source ? "· " + escapeHtml(n.source) : ""}</p>
@@ -1047,7 +1047,7 @@ function drawAiQueueTab(root) {
         <div id="ai-item-${item.id}" class="card p-5 fadeIn">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <span class="badge bg-violet-50 text-violet-700">${escapeHtml(AI_CONTENT_TYPE_LABELS[item.content_type] || item.content_type)}</span>
+              <span class="badge bg-sky-50 text-sky-700">${escapeHtml(AI_CONTENT_TYPE_LABELS[item.content_type] || item.content_type)}</span>
               <p class="text-xs text-slate-400 mt-1">Kaynak haber: ${escapeHtml(item.news_items?.title || "—")}</p>
               <div class="mt-2">${draftPreviewHtml(item)}</div>
             </div>
@@ -1139,7 +1139,7 @@ function sourceRowHtml(s) {
     <div class="card p-4 flex flex-wrap items-center justify-between gap-3">
       <div class="min-w-0">
         <p class="font-bold text-slate-900">${escapeHtml(s.name)}</p>
-        <a href="${escapeHtml(s.url || "#")}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:underline truncate block max-w-md">${escapeHtml(s.url || "—")}</a>
+        <a href="${escapeHtml(s.url || "#")}" target="_blank" rel="noopener" class="text-xs text-teal-600 hover:underline truncate block max-w-md">${escapeHtml(s.url || "—")}</a>
         <div class="flex items-center gap-2 mt-1.5">
           <span class="badge bg-slate-100 text-slate-600">${escapeHtml(s.source_type || "—")}</span>
           ${badge(s.last_status || "bilinmiyor", statusColor)}
@@ -1219,7 +1219,7 @@ function drawAuditTab(root) {
 
 function auditRowsHtml(row) {
   const isExpanded = auditState.expanded.has(row.id);
-  const actorColor = row.actor_type === "admin" ? "#6366f1" : "#0891b2";
+  const actorColor = row.actor_type === "admin" ? "#14b8a6" : "#0891b2";
   const idShort = row.record_id ? String(row.record_id).slice(0, 8) + "…" : "—";
   const main = `
     <tr>
@@ -1228,7 +1228,7 @@ function auditRowsHtml(row) {
       <td class="px-4 py-2 font-medium text-slate-700">${escapeHtml(row.action || "—")}</td>
       <td class="px-4 py-2 text-slate-500">${escapeHtml(row.table_name || "—")}</td>
       <td class="px-4 py-2 text-slate-400 font-mono text-xs">${escapeHtml(idShort)}</td>
-      <td class="px-4 py-2"><button id="audit-toggle-${row.id}" class="text-indigo-600 text-xs font-semibold hover:underline">${isExpanded ? "Gizle" : "Detay"}</button></td>
+      <td class="px-4 py-2"><button id="audit-toggle-${row.id}" class="text-teal-600 text-xs font-semibold hover:underline">${isExpanded ? "Gizle" : "Detay"}</button></td>
     </tr>`;
   const detail = isExpanded ? `
     <tr>
@@ -1302,7 +1302,7 @@ function drawStudentsTab(root) {
             <tr>
               <td class="px-4 py-2 font-medium text-slate-700">${escapeHtml(s.profiles?.full_name || "İsimsiz")}</td>
               <td class="px-4 py-2 text-slate-500">${escapeHtml(s.profiles?.email || "—")}</td>
-              <td class="px-4 py-2">${s.exam_type ? badge(EXAM_TYPE_LABELS[s.exam_type] || s.exam_type, "#6366f1") : "—"}</td>
+              <td class="px-4 py-2">${s.exam_type ? badge(EXAM_TYPE_LABELS[s.exam_type] || s.exam_type, "#14b8a6") : "—"}</td>
               <td class="px-4 py-2 text-slate-500">${s.target_score ?? "—"}</td>
               <td class="px-4 py-2">${s.onboarding_completed ? badge("Tamamlandı", "#059669") : badge("Devam ediyor", "#d97706")}</td>
               <td class="px-4 py-2 text-slate-500">🔥 ${s.gami?.current_streak ?? 0}</td>

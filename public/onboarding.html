@@ -70,7 +70,7 @@ if (!session) { window.location.href = "login.html"; throw new Error("no auth");
 let selectedExamType = "kpss_lisans";
 const optionsBox = document.getElementById("exam-type-options");
 optionsBox.innerHTML = Object.entries(EXAM_TYPE_LABELS).map(([key, label]) => `
-  <button type="button" data-key="${key}" class="exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${key === selectedExamType ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">${label}</button>
+  <button type="button" data-key="${key}" class="exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${key === selectedExamType ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">${label}</button>
 `).join("");
 
 optionsBox.querySelectorAll(".exam-type-btn").forEach(btn => {
@@ -78,7 +78,7 @@ optionsBox.querySelectorAll(".exam-type-btn").forEach(btn => {
     selectedExamType = btn.dataset.key;
     optionsBox.querySelectorAll(".exam-type-btn").forEach(b => {
       const active = b.dataset.key === selectedExamType;
-      b.className = `exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${active ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`;
+      b.className = `exam-type-btn text-left px-3 py-2.5 rounded-xl border text-sm font-medium transition ${active ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`;
     });
   });
 });

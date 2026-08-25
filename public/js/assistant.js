@@ -36,14 +36,14 @@ function bubbleHtml(msg) {
   if (msg.role === "user") {
     return `
       <div class="flex justify-end fadeIn">
-        <div class="max-w-[80%] bg-indigo-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">
+        <div class="max-w-[80%] bg-teal-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm shadow-sm">
           ${escapeHtml(msg.text)}
         </div>
       </div>`;
   }
   return `
     <div class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">🤖</div>
       <div class="max-w-[80%] bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-slate-700 shadow-sm">
         ${escapeHtml(msg.text)}
       </div>
@@ -53,7 +53,7 @@ function bubbleHtml(msg) {
 function typingHtml() {
   return `
     <div id="typing-indicator" class="flex justify-start items-end gap-2 fadeIn">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">🤖</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">🤖</div>
       <div class="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>
         <span class="w-1.5 h-1.5 rounded-full bg-slate-400 typing-dot"></span>
@@ -76,7 +76,7 @@ function emptyStateHtml() {
 
 function renderChips() {
   chipRow.innerHTML = STARTER_PROMPTS.map((p) =>
-    `<button type="button" data-prompt="${escapeHtml(p)}" class="chip-btn text-xs font-medium px-3 py-1.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">${escapeHtml(p)}</button>`
+    `<button type="button" data-prompt="${escapeHtml(p)}" class="chip-btn text-xs font-medium px-3 py-1.5 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 transition">${escapeHtml(p)}</button>`
   ).join("");
 
   chipRow.querySelectorAll(".chip-btn").forEach((btn) => {

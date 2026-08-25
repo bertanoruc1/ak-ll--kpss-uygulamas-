@@ -24,4 +24,4 @@ export const NEWS_CATEGORY_LABELS = {
 };
 
 export const NOTIFICATION_PRIORITY_LABELS = { kritik: "Kritik", onemli: "Önemli", normal: "Normal", dusuk: "Düşük" };
-export const NOTIFICATION_PRIORITY_COLORS = { kritik: "#dc2626", onemli: "#d97706", normal: "#6366f1", dusuk: "#94a3b8" };
+export const NOTIFICATION_PRIORITY_COLORS = { kritik: "#dc2626", onemli: "#d97706", normal: "#14b8a6", dusuk: "#94a3b8" };

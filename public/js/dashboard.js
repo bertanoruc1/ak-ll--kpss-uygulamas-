@@ -48,7 +48,7 @@ function sessionLink(session) {
 
 const STATUS_LABELS = { planned: "Planlandı", done: "Tamamlandı", skipped: "Atlandı" };
 const STATUS_CLASSES = {
-  planned: "bg-indigo-50 text-indigo-700",
+  planned: "bg-teal-50 text-teal-700",
   done: "bg-emerald-50 text-emerald-700",
   skipped: "bg-slate-100 text-slate-500",
 };
@@ -59,18 +59,18 @@ function renderHero(data) {
   const notifBadgeHtml = () => {
     const unread = data.unread_notifications || 0;
     if (!unread) return "";
-    return `<span id="notif-badge" class="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" style="box-shadow: 0 0 0 2px rgba(76,29,149,.55);">${unread > 99 ? "99+" : unread}</span>`;
+    return `<span id="notif-badge" class="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" style="box-shadow: 0 0 0 2px rgba(15,118,110,.55);">${unread > 99 ? "99+" : unread}</span>`;
   };
 
   el.innerHTML = `
-    <div class="rounded-2xl p-6 sm:p-7 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #3730a3, #6d28d9 45%, #a21caf 100%); box-shadow: 0 24px 56px -16px rgba(76,29,149,.5);">
+    <div class="rounded-2xl p-6 sm:p-7 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #0f766e, #0284c7 45%, #22d3ee 100%); box-shadow: 0 24px 56px -16px rgba(15,118,110,.5);">
       <div class="absolute inset-0" style="background: radial-gradient(340px 220px at 105% -10%, rgba(255,255,255,.16), transparent 60%), radial-gradient(260px 200px at -10% 110%, rgba(255,255,255,.08), transparent 55%);"></div>
       <div class="absolute -right-8 -bottom-10 text-9xl opacity-[0.08] select-none" style="pointer-events:none;">🎯</div>
 
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="text-xs font-semibold text-indigo-200 uppercase tracking-wide">${timeOfDayGreeting()}</p>
+            <p class="text-xs font-semibold text-teal-200 uppercase tracking-wide">${timeOfDayGreeting()}</p>
             <h1 class="text-2xl sm:text-3xl font-extrabold leading-tight mt-0.5">Merhaba, ${escapeHtml(data.greeting_name || "Öğrenci")} 👋</h1>
           </div>
           <a href="notifications.html" class="relative shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl transition" style="background: rgba(255,255,255,.12); backdrop-filter: blur(6px);">
@@ -88,25 +88,25 @@ function renderHero(data) {
           ${exam ? `
             <div class="flex items-end justify-between gap-3 flex-wrap">
               <div>
-                <p class="text-xs font-medium text-indigo-200 tracking-wide">${escapeHtml(exam.name)}</p>
+                <p class="text-xs font-medium text-teal-200 tracking-wide">${escapeHtml(exam.name)}</p>
                 <div class="flex items-end gap-1.5 mt-1 flex-wrap" id="exam-countdown">
                   <span id="stat-days-left" class="text-5xl font-extrabold leading-none">0</span>
-                  <span class="text-base font-semibold mb-1 text-indigo-100 mr-1.5">gün</span>
+                  <span class="text-base font-semibold mb-1 text-teal-100 mr-1.5">gün</span>
                   <span id="stat-hours-left" class="text-2xl font-extrabold leading-none">00</span>
-                  <span class="text-sm font-semibold mb-0.5 text-indigo-100 mr-1">sa</span>
+                  <span class="text-sm font-semibold mb-0.5 text-teal-100 mr-1">sa</span>
                   <span id="stat-minutes-left" class="text-2xl font-extrabold leading-none">00</span>
-                  <span class="text-sm font-semibold mb-0.5 text-indigo-100 mr-1">dk</span>
+                  <span class="text-sm font-semibold mb-0.5 text-teal-100 mr-1">dk</span>
                   <span id="stat-seconds-left" class="text-2xl font-extrabold leading-none">00</span>
-                  <span class="text-sm font-semibold mb-0.5 text-indigo-100">sn kaldı</span>
+                  <span class="text-sm font-semibold mb-0.5 text-teal-100">sn kaldı</span>
                 </div>
               </div>
-              <p class="text-xs text-indigo-200">${fmtDate(exam.exam_date)}${exam.exam_time ? " · " + exam.exam_time.slice(0,5) : ""}</p>
+              <p class="text-xs text-teal-200">${fmtDate(exam.exam_date)}${exam.exam_time ? " · " + exam.exam_time.slice(0,5) : ""}</p>
             </div>` : `
             <div class="flex items-center gap-3">
               <span class="text-2xl">📅</span>
               <div>
                 <p class="text-sm font-semibold">Sınav takvimi henüz belirlenmedi</p>
-                <a href="exams.html" class="text-xs font-semibold text-indigo-200 hover:underline">Sınav Takvimine Git →</a>
+                <a href="exams.html" class="text-xs font-semibold text-teal-200 hover:underline">Sınav Takvimine Git →</a>
               </div>
             </div>`}
         </div>
@@ -207,8 +207,8 @@ function renderTopNews(data) {
   el.innerHTML = `
     <div class="card p-4 fadeIn">
       <div class="flex items-start justify-between gap-2">
-        <span class="badge bg-indigo-50 text-indigo-700">${escapeHtml(categoryLabel)}</span>
-        <a href="news.html" class="text-xs font-semibold text-indigo-600 hover:underline shrink-0">Tümünü Gör →</a>
+        <span class="badge bg-teal-50 text-teal-700">${escapeHtml(categoryLabel)}</span>
+        <a href="news.html" class="text-xs font-semibold text-teal-600 hover:underline shrink-0">Tümünü Gör →</a>
       </div>
       <p class="font-bold text-slate-900 mt-2">${escapeHtml(news.title)}</p>
       ${summary ? `<p class="text-sm text-slate-500 mt-1">${summary}</p>` : ""}
@@ -224,10 +224,10 @@ function renderTodayStatus(data) {
     <div class="card p-5">
       <div class="flex items-center justify-between mb-2">
         <p class="font-bold text-slate-900">Bugün ${done}/${total} tamamlandı</p>
-        <span class="text-sm font-semibold text-indigo-600">%<span id="stat-today-pct">0</span></span>
+        <span class="text-sm font-semibold text-teal-600">%<span id="stat-today-pct">0</span></span>
       </div>
       <div class="progress-track">
-        <div id="today-progress-fill" class="progress-fill" style="width:0%; background: linear-gradient(90deg, #6366f1, #7c3aed);"></div>
+        <div id="today-progress-fill" class="progress-fill" style="width:0%; background: linear-gradient(90deg, #14b8a6, #0ea5e9);"></div>
       </div>
     </div>`;
   countUp(document.getElementById("stat-today-pct"), pct, { duration: 700 });
@@ -253,9 +253,9 @@ function renderTodayPriority(data) {
     <div class="priority-card rounded-2xl p-6">
       <div class="flex items-center gap-2 mb-2">
         <span class="text-2xl">⭐</span>
-        <span class="badge bg-white text-indigo-700 border border-indigo-100">Bugünün Önceliği</span>
+        <span class="badge bg-white text-teal-700 border border-teal-100">Bugünün Önceliği</span>
       </div>
-      <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wide">${escapeHtml(p.subject_name || "")} · ${escapeHtml(p.topic_name || "")}</p>
+      <p class="text-xs font-semibold text-teal-500 uppercase tracking-wide">${escapeHtml(p.subject_name || "")} · ${escapeHtml(p.topic_name || "")}</p>
       <p class="font-bold text-lg text-slate-900 mt-1 leading-snug">${escapeHtml(p.reason)}</p>
       <a href="topic.html?id=${p.topic_id}" class="btn-primary inline-block mt-4 px-5 py-2.5 text-sm">Şimdi Çalış →</a>
     </div>`;
@@ -630,20 +630,20 @@ function renderScheduleTimeline(data) {
       <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <p class="font-bold text-slate-900">Bugünün Programı</p>
         <div class="flex items-center gap-3">
-          <button id="add-task-btn" class="text-xs font-semibold text-indigo-600 hover:underline">📝 Bugün Yapılacak Ekle</button>
-          <button id="replan-btn" class="text-xs font-semibold text-indigo-600 hover:underline">⚙️ Saatleri Ayarla</button>
+          <button id="add-task-btn" class="text-xs font-semibold text-teal-600 hover:underline">📝 Bugün Yapılacak Ekle</button>
+          <button id="replan-btn" class="text-xs font-semibold text-teal-600 hover:underline">⚙️ Saatleri Ayarla</button>
         </div>
       </div>
       <div class="space-y-0">
         ${sessions.map((s, i) => `
           <div class="flex gap-3 relative">
             <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full mt-1.5 shrink-0" style="background: ${s.status === "done" ? "#10b981" : s.status === "skipped" ? "#cbd5e1" : "#6366f1"};"></div>
+              <div class="w-3 h-3 rounded-full mt-1.5 shrink-0" style="background: ${s.status === "done" ? "#10b981" : s.status === "skipped" ? "#cbd5e1" : "#14b8a6"};"></div>
               ${i < sessions.length - 1 ? '<div class="w-px flex-1 bg-slate-200 my-0.5"></div>' : ""}
             </div>
             <div class="flex-1 pb-4 flex items-start gap-1.5">
               <a href="${sessionLink(s)}" class="flex-1 group min-w-0">
-                <div class="rounded-xl border border-slate-100 group-hover:border-indigo-200 group-hover:bg-indigo-50/40 transition p-3">
+                <div class="rounded-xl border border-slate-100 group-hover:border-teal-200 group-hover:bg-teal-50/40 transition p-3">
                   <div class="flex items-start justify-between gap-2">
                     <div class="flex items-center gap-2 min-w-0">
                       <span class="text-lg shrink-0">${SESSION_TYPE_ICONS[s.session_type] || "📌"}</span>
@@ -710,7 +710,7 @@ function renderWeeklyProgress(data) {
           return `
             <div class="flex-1 flex flex-col items-center justify-end h-full">
               <span class="text-[10px] font-semibold text-slate-400 mb-1">${d.questions || 0}s</span>
-              <div class="w-full rounded-t-lg" style="height:${heightPct}%; background: linear-gradient(180deg, #7c3aed, #6366f1); min-height: 4px;"></div>
+              <div class="w-full rounded-t-lg" style="height:${heightPct}%; background: linear-gradient(180deg, #0ea5e9, #14b8a6); min-height: 4px;"></div>
               <span class="text-[11px] font-medium text-slate-500 mt-1.5">${label}</span>
             </div>`;
         }).join("")}

@@ -37,17 +37,17 @@ function examCard(exam, isOwn) {
   const hasWindow = exam.application_start || exam.application_end;
 
   return `
-    <div class="card p-5 fadeIn ${isOwn ? "ring-2 ring-indigo-500" : ""}">
+    <div class="card p-5 fadeIn ${isOwn ? "ring-2 ring-teal-500" : ""}">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-          <span class="badge bg-indigo-50 text-indigo-700">${escapeHtml(typeLabel)}</span>
+          <span class="badge bg-teal-50 text-teal-700">${escapeHtml(typeLabel)}</span>
           <p class="font-bold text-slate-900 mt-2 truncate">${escapeHtml(exam.name)}</p>
           ${exam.exam_date ? `<p class="text-sm text-slate-500 mt-0.5">${fmtDate(exam.exam_date)}</p>` : ""}
         </div>
-        ${isOwn ? `<span class="badge bg-violet-50 text-violet-700 shrink-0">Senin Sınavın</span>` : ""}
+        ${isOwn ? `<span class="badge bg-sky-50 text-sky-700 shrink-0">Senin Sınavın</span>` : ""}
       </div>
 
-      <div class="mt-3 ${exam.exam_date ? "rounded-xl p-4 text-white" : ""}" ${exam.exam_date ? `style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);"` : ""}>
+      <div class="mt-3 ${exam.exam_date ? "rounded-xl p-4 text-white" : ""}" ${exam.exam_date ? `style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);"` : ""}>
         ${daysLeftLabel(exam.exam_date)}
       </div>
 
@@ -71,7 +71,7 @@ function examCard(exam, isOwn) {
 
       ${lowConfidence ? `<p class="text-xs text-amber-600 font-medium mt-3">⚠️ Bu bilgi henüz tam doğrulanmadı</p>` : ""}
 
-      ${exam.source_url ? `<a href="${escapeHtml(exam.source_url)}" target="_blank" rel="noopener" class="text-sm font-semibold text-indigo-600 hover:underline mt-3 inline-block">Resmi kaynağı görüntüle →</a>` : ""}
+      ${exam.source_url ? `<a href="${escapeHtml(exam.source_url)}" target="_blank" rel="noopener" class="text-sm font-semibold text-teal-600 hover:underline mt-3 inline-block">Resmi kaynağı görüntüle →</a>` : ""}
     </div>`;
 }
 

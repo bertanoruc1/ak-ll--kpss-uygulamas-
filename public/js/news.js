@@ -6,11 +6,11 @@ import { NEWS_CATEGORY_LABELS } from "./config.js";
 
 // Kategori rozetleri için renk paleti (koyu metin / açık zemin eşleşmeleri)
 const CATEGORY_COLORS = {
-  osym: "bg-indigo-50 text-indigo-700",
-  kpss: "bg-violet-50 text-violet-700",
-  basvuru: "bg-sky-50 text-sky-700",
+  osym: "bg-teal-50 text-teal-700",
+  kpss: "bg-sky-50 text-sky-700",
+  basvuru: "bg-blue-50 text-blue-700",
   sinav_takvimi: "bg-amber-50 text-amber-700",
-  kilavuz: "bg-teal-50 text-teal-700",
+  kilavuz: "bg-yellow-50 text-yellow-700",
   sonuc: "bg-emerald-50 text-emerald-700",
   tercih: "bg-fuchsia-50 text-fuchsia-700",
   yerlestirme: "bg-cyan-50 text-cyan-700",
@@ -48,7 +48,7 @@ function renderChips() {
           data-category="${c.key}"
           class="chip-btn shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold border transition ${
             isActive
-              ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+              ? "bg-teal-600 text-white border-teal-600 shadow-sm"
               : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
           }"
         >${escapeHtml(c.label)}</button>`;
@@ -92,7 +92,7 @@ function newsCard(item) {
         <span class="text-xs font-medium text-slate-400">${escapeHtml(item.source || "Kaynak belirtilmemiş")}</span>
         ${
           item.source_url
-            ? `<a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700">Resmi kaynağı görüntüle →</a>`
+            ? `<a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">Resmi kaynağı görüntüle →</a>`
             : ""
         }
       </div>

@@ -36,12 +36,12 @@ function renderList() {
     const color = NOTIFICATION_PRIORITY_COLORS[n.priority] || NOTIFICATION_PRIORITY_COLORS.normal;
     const unread = !n.is_read;
     return `
-      <button data-id="${n.id}" class="notif-item card p-4 text-left w-full transition fadeIn ${unread ? "bg-indigo-50/50" : "bg-white"}" style="border-left: 4px solid ${color};">
+      <button data-id="${n.id}" class="notif-item card p-4 text-left w-full transition fadeIn ${unread ? "bg-teal-50/50" : "bg-white"}" style="border-left: 4px solid ${color};">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
               ${priorityBadge(n.priority)}
-              ${unread ? '<span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>' : ""}
+              ${unread ? '<span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>' : ""}
             </div>
             <p class="mt-1.5 ${unread ? "font-bold text-slate-900" : "font-medium text-slate-600"}">${escapeHtml(n.title || "")}</p>
             ${n.body ? `<p class="text-sm text-slate-500 mt-0.5">${escapeHtml(n.body)}</p>` : ""}

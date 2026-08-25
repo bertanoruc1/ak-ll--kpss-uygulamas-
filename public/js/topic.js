@@ -97,14 +97,14 @@ function render() {
   const score = progress?.knowledge_score ?? 0;
   const level = progress?.learning_level;
   const color = scoreColor(score);
-  const subjColor = subject?.color || "#6366f1";
+  const subjColor = subject?.color || "#14b8a6";
 
   contentEl.innerHTML = `
     <div class="fadeIn">
       <div class="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
-        <a href="subjects.html" class="hover:text-indigo-600 hover:underline">Dersler</a>
+        <a href="subjects.html" class="hover:text-teal-600 hover:underline">Dersler</a>
         <span>›</span>
-        <a href="subjects.html?subject=${subject?.id || ""}" class="hover:text-indigo-600 hover:underline">${escapeHtml(subject?.name || "")}</a>
+        <a href="subjects.html?subject=${subject?.id || ""}" class="hover:text-teal-600 hover:underline">${escapeHtml(subject?.name || "")}</a>
         <span>›</span>
         <span class="text-slate-600 font-medium">${escapeHtml(topic.name)}</span>
       </div>
@@ -146,13 +146,13 @@ function render() {
         ${topicContent?.video_url ? `
           <a href="${escapeHtml(topicContent.video_url)}" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition">
             <span class="text-2xl">▶️</span>
-            <span class="text-sm font-medium text-indigo-600 truncate">${escapeHtml(topicContent.video_url)}</span>
+            <span class="text-sm font-medium text-teal-600 truncate">${escapeHtml(topicContent.video_url)}</span>
           </a>
           <button id="video-watched-btn" class="btn-secondary mt-3 px-4 py-2 text-sm">Videoyu İzledim</button>
         ` : `<p class="text-sm text-slate-400 italic">İçerik henüz eklenmedi.</p>`}
       </div>
 
-      <div class="card p-5 mt-4 text-center" style="background: linear-gradient(135deg, #eef2ff, #f5f3ff); border: 1px solid #e0e7ff;">
+      <div class="card p-5 mt-4 text-center" style="background: linear-gradient(135deg, #f0fdfa, #f0f9ff); border: 1px solid #ccfbf1;">
         <p class="font-bold text-slate-900 mb-1">Bu konuyu öğrendiğini düşünüyor musun?</p>
         <p class="text-xs text-slate-500 mb-3">Onayladığında aşağıdaki soru bölümü hemen açılır.</p>
         <button id="understood-btn" class="btn-primary px-5 py-2.5">✅ Bu konuyu anladım, soruları göster</button>

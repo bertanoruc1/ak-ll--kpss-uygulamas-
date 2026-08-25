@@ -44,7 +44,7 @@ function renderAchievements(achievements) {
     <div class="card p-6">
       <div class="flex items-center justify-between mb-1">
         <p class="font-bold text-slate-900">🏆 Rozetlerim</p>
-        <span class="text-xs font-semibold text-indigo-600">${earnedCount}/${achievements.length}</span>
+        <span class="text-xs font-semibold text-teal-600">${earnedCount}/${achievements.length}</span>
       </div>
       <p class="text-xs text-slate-400 mb-4">Çalıştıkça yeni rozetler kazanırsın.</p>
       <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
@@ -66,7 +66,7 @@ function render(student, gami, achievements) {
     <div class="space-y-5 fadeIn">
       <!-- Avatar + kimlik -->
       <div class="card p-6 flex items-center gap-4">
-        <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold text-white shrink-0" style="background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #a855f7);">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-extrabold text-white shrink-0" style="background: linear-gradient(135deg, #0f766e, #0ea5e9 55%, #22d3ee);">
           ${escapeHtml(initials(name, email))}
         </div>
         <div class="min-w-0">
