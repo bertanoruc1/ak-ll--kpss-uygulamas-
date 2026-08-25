@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Ana Sayfa · KPSS Akıllı</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
-<link rel="stylesheet" href="css/tailwind-static.css?v=4" />
-<link rel="stylesheet" href="css/styles.css?v=4" />
+<link rel="stylesheet" href="css/tailwind-static.css?v=5" />
+<link rel="stylesheet" href="css/styles.css?v=5" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
@@ -15,42 +15,61 @@
   <div class="app-shell">
     <aside id="sidebar"></aside>
     <main class="main-content w-full">
-      <div class="max-w-3xl mx-auto p-4 sm:p-6 space-y-5 pb-10 stagger">
+      <div class="max-w-3xl mx-auto p-4 sm:p-6 space-y-5 pb-28 sm:pb-10 stagger">
 
-        <!-- 1+2. Hero: selamlama + rozet istatistikleri + sınav geri sayımı, tek büyük kartta -->
+        <!-- 1+2. Hero: selamlama + rozet istatistikleri + sınav geri sayımı, tek büyük kartta.
+             İskelet yüksekliği (420px), gerçek hero kartının (sınavlı hâliyle, en yaygın
+             durum) ölçülmüş yüksekliğine (~416-487px) yakın tutuldu — eskiden h-56 (224px)
+             idi, gerçek karttan ~2 kat kısaydı ve veri gelince belirgin bir "zıplama"
+             (layout shift) yaratıyordu. -->
         <div id="hero-card" class="fadeIn">
-          <div class="skeleton h-56 w-full" style="border-radius: var(--radius);"></div>
+          <div class="skeleton h-[420px] w-full" style="border-radius: var(--radius);"></div>
         </div>
 
-        <!-- Günün ipucu (motivasyon) -->
-        <div id="daily-tip" class="fadeIn"></div>
+        <!-- Günün ipucu (motivasyon) — deterministik, ~170px'e yakın bir iskelet eklendi
+             (öncesinde iskelet hiç yoktu, içerik gelince sıfırdan ~170-190px'lik bir
+             kayma oluyordu). -->
+        <div id="daily-tip" class="fadeIn">
+          <div class="skeleton h-40 w-full" style="border-radius: var(--radius);"></div>
+        </div>
 
-        <!-- 3. Öncelikli duyuru -->
+        <!-- 3. Öncelikli duyuru — kasıtlı olarak iskeletsiz bırakıldı: bu kart öğrencinin
+             sınav türüne uygun haber olup olmamasına göre ya ~260-320px ya da 0px (hiç)
+             render oluyor; sabit bir iskelet, "haber yok" durumunda (muhtemelen daha az
+             CLS önemli olan taraf) kendi kayma sorununu yaratırdı. -->
         <div id="top-news"></div>
 
-        <!-- 4. Bugünkü durum -->
+        <!-- 4. Bugünkü durum — gerçek kart yüksekliği sabit ~109px, en yakın Tailwind
+             ölçeği h-28 (112px) kullanıldı (eskiden h-20/80px, ~30px kısaydı). -->
         <div id="today-status" class="fadeIn">
-          <div class="skeleton h-20 w-full"></div>
+          <div class="skeleton h-28 w-full"></div>
         </div>
 
-        <!-- 6. Tek öncelik -->
+        <!-- 6. Tek öncelik — "öncelik var" durumu (daha yaygın/değerli, ~340-396px) hedef
+             alınarak 360px'e çıkarıldı; eskiden h-32 (128px) idi, gerçek karttan neredeyse
+             3 kat kısaydı. -->
         <div id="today-priority" class="fadeIn">
-          <div class="skeleton h-32 w-full"></div>
+          <div class="skeleton h-[360px] w-full"></div>
         </div>
 
-        <!-- 5+7. Program zaman çizelgesi -->
+        <!-- 5+7. Program zaman çizelgesi — görev sayısına göre gerçek yükseklik değişken
+             (ölçülen örnek: 5 görevle ~865-881px); tipik dolu bir gün için makul bir orta
+             değer olan 520px'e çıkarıldı (eskiden h-40/160px, birkaç göreve bile
+             yetmiyordu). -->
         <div id="schedule-timeline" class="fadeIn">
+          <div class="skeleton h-[520px] w-full"></div>
+        </div>
+
+        <!-- 8. Başarı oranı — gerçek yükseklik sabit ~166px, en yakın ölçek h-40 (160px)
+             kullanıldı (eskiden h-24/96px). -->
+        <div id="success-rate" class="fadeIn">
           <div class="skeleton h-40 w-full"></div>
         </div>
 
-        <!-- 8. Başarı oranı -->
-        <div id="success-rate" class="fadeIn">
-          <div class="skeleton h-24 w-full"></div>
-        </div>
-
-        <!-- 9. Haftalık ilerleme -->
+        <!-- 9. Haftalık ilerleme — gerçek yükseklik sabit ~237px, en yakın ölçek h-56
+             (224px) kullanıldı (eskiden h-48/192px). -->
         <div id="weekly-progress" class="fadeIn">
-          <div class="skeleton h-48 w-full"></div>
+          <div class="skeleton h-56 w-full"></div>
         </div>
 
         <div id="error-state" class="hidden card p-8 text-center">
@@ -69,6 +88,6 @@
     🤖
   </a>
 
-  <script type="module" src="js/dashboard.js"></script>
+  <script type="module" src="js/dashboard.js?v=2"></script>
 </body>
 </html>

@@ -33,6 +33,43 @@ function shortTime(t) {
   return t.slice(0, 5);
 }
 
+// planned_start/planned_end hem "HH:MM:SS" hem de ISO ("...T...") biçiminde
+// gelebiliyor (bkz. shortTime) — sıralama ve çakışma kontrolü için ikisini de
+// gün içindeki dakikaya çeviren ortak bir yardımcı.
+function toMinutes(t) {
+  if (!t) return 0;
+  if (t.includes("T")) {
+    const d = new Date(t);
+    return d.getHours() * 60 + d.getMinutes();
+  }
+  const [h, m] = t.split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+}
+
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+// "Bugünün Programı" listesinin en güncel (sıralanmış) hâli — hem
+// renderScheduleTimeline hem de yeni görev eklerken çakışma kontrolü için
+// paylaşılan tek kaynak.
+let currentSessions = [];
+
+// Yeni bir [startTime,endTime) aralığının (saat girişleri "HH:MM" formatında)
+// mevcut görevlerden hangileriyle çakıştığını döner. "Atlandı" olarak
+// işaretlenmiş görevler o saati boşalttığı için kontrole dahil edilmiyor.
+function findOverlappingSessions(startTime, endTime, excludeId = null) {
+  const newStart = toMinutes(startTime);
+  const newEnd = toMinutes(endTime) || newStart;
+  return currentSessions.filter((s) => {
+    if (excludeId && s.id === excludeId) return false;
+    if (s.status === "skipped") return false;
+    const sStart = toMinutes(s.planned_start);
+    const sEnd = toMinutes(s.planned_end || s.planned_start);
+    return rangesOverlap(newStart, newEnd, sStart, sEnd);
+  });
+}
+
 function sessionLink(session) {
   const type = session.session_type;
   const topicId = session.topic_id;
@@ -478,6 +515,7 @@ async function openTaskModal() {
           <input id="task-end-time" type="time" class="input" />
         </div>
       </div>
+      <p id="task-overlap-warning" class="hidden text-xs font-semibold text-rose-600 mt-2 flex items-start gap-1">⚠️ <span></span></p>
 
       <div class="mt-3" id="task-question-target-wrap">
         <label class="text-xs font-semibold text-slate-600 block mb-1.5">Hedef Soru Sayısı <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
@@ -506,6 +544,28 @@ async function openTaskModal() {
   }
   typeSelect.addEventListener("change", syncFieldsForType);
   syncFieldsForType();
+
+  // Kullanıcı saat girerken anlık çakışma uyarısı — kaydetmeden ÖNCE, o gün
+  // için zaten planlanmış görevlerle çakışıp çakışmadığını gösterir.
+  const startTimeInput = document.getElementById("task-start-time");
+  const endTimeInput = document.getElementById("task-end-time");
+  const overlapWarningEl = document.getElementById("task-overlap-warning");
+  const submitBtnEl = document.getElementById("task-modal-submit");
+  function updateOverlapWarning() {
+    if (submitBtnEl) { submitBtnEl.dataset.overlapConfirmed = "0"; submitBtnEl.textContent = "Görevi Oluştur"; }
+    const st = startTimeInput.value, et = endTimeInput.value;
+    if (!st || !et || !overlapWarningEl) { overlapWarningEl?.classList.add("hidden"); return; }
+    const conflicts = findOverlappingSessions(st, et);
+    if (conflicts.length > 0) {
+      const names = conflicts.map((c) => c.subject_name || SESSION_TYPE_LABELS[c.session_type] || "bir görev").join(", ");
+      overlapWarningEl.querySelector("span").textContent = `Bu saat aralığı şununla çakışıyor: ${names}`;
+      overlapWarningEl.classList.remove("hidden");
+    } else {
+      overlapWarningEl.classList.add("hidden");
+    }
+  }
+  startTimeInput.addEventListener("input", updateOverlapWarning);
+  endTimeInput.addEventListener("input", updateOverlapWarning);
 
   async function loadTopicsForSubject(subjectId) {
     if (!subjectId) {
@@ -562,6 +622,17 @@ async function submitTaskModal(btn) {
     return;
   }
 
+  // Çakışma varsa ilk tıklamada engelle, kullanıcıya göster; bilerek "yine de
+  // ekle" derse (butona ikinci kez basarsa) devam et.
+  const conflicts = findOverlappingSessions(startTime, endTime);
+  if (conflicts.length > 0 && btn.dataset.overlapConfirmed !== "1") {
+    const names = conflicts.map((c) => c.subject_name || SESSION_TYPE_LABELS[c.session_type] || "bir görev").join(", ");
+    toast(`⚠️ Bu saatler şununla çakışıyor: ${names}. Yine de eklemek için tekrar "Görevi Oluştur"a bas.`, "error");
+    btn.dataset.overlapConfirmed = "1";
+    btn.textContent = "Yine de Ekle";
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = "Oluşturuluyor...";
 
@@ -607,7 +678,32 @@ async function deleteManualTask(sessionId, btn) {
 
 function renderScheduleTimeline(data) {
   const el = document.getElementById("schedule-timeline");
-  const sessions = data.today_sessions || [];
+  // Backend zaten planned_start sırasına göre veriyor olsa da, manuel
+  // eklenen görevler (create_manual_session) listeye ekleniş sırasına göre
+  // gelebiliyordu — bu yüzden istemci tarafında da HER ZAMAN başlangıç
+  // saatine göre artan sırada göster (array.sort). Kullanıcı yeni görev
+  // eklediğinde loadHomepage() zaten baştan çağrılıp bu fonksiyon yeniden
+  // çalıştığı için sıralama otomatik olarak güncel kalır.
+  const sessions = [...(data.today_sessions || [])].sort(
+    (a, b) => toMinutes(a.planned_start) - toMinutes(b.planned_start)
+  );
+  // Görev ekleme modalındaki anlık çakışma kontrolü için en güncel (sıralı)
+  // listeyi paylaşılan değişkende sakla.
+  currentSessions = sessions;
+
+  // Sıralanmış listede ardışık görevlerin saat aralıkları çakışıyor mu diye
+  // kontrol et — "Atlandı" olanlar o saati boşalttığı için sayılmıyor.
+  const overlapIds = new Set();
+  for (let i = 0; i < sessions.length - 1; i++) {
+    const a = sessions[i];
+    const b = sessions[i + 1];
+    if (a.status === "skipped" || b.status === "skipped") continue;
+    const overlap = rangesOverlap(
+      toMinutes(a.planned_start), toMinutes(a.planned_end || a.planned_start),
+      toMinutes(b.planned_start), toMinutes(b.planned_end || b.planned_start)
+    );
+    if (overlap) { overlapIds.add(a.id); overlapIds.add(b.id); }
+  }
 
   if (sessions.length === 0) {
     el.innerHTML = `
@@ -643,7 +739,7 @@ function renderScheduleTimeline(data) {
             </div>
             <div class="flex-1 pb-4 flex items-start gap-1.5">
               <a href="${sessionLink(s)}" class="flex-1 group min-w-0">
-                <div class="rounded-xl border border-slate-100 group-hover:border-teal-200 group-hover:bg-teal-50/40 transition p-3">
+                <div class="rounded-xl border ${overlapIds.has(s.id) ? "border-rose-200 bg-rose-50/40" : "border-slate-100"} group-hover:border-teal-200 group-hover:bg-teal-50/40 transition p-3">
                   <div class="flex items-start justify-between gap-2">
                     <div class="flex items-center gap-2 min-w-0">
                       <span class="text-lg shrink-0">${SESSION_TYPE_ICONS[s.session_type] || "📌"}</span>
@@ -661,6 +757,7 @@ function renderScheduleTimeline(data) {
                     ${s.duration_minutes ? `<span>⏱ ${s.duration_minutes} dk</span>` : ""}
                     ${s.question_target ? `<span>🎯 ${s.question_target} soru</span>` : ""}
                   </div>
+                  ${overlapIds.has(s.id) ? `<p class="text-xs font-semibold text-rose-600 mt-2 flex items-center gap-1">⚠️ Bu görev, saat olarak başka bir görevle çakışıyor</p>` : ""}
                 </div>
               </a>
               ${s.is_manual ? `<button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">🗑️</button>` : ""}

@@ -58,6 +58,7 @@
 .bg-orange-50 { background-color: #fff7ed; }
 .bg-orange-700\/40 { background-color: rgba(194,65,12,0.4); }
 .bg-rose-50 { background-color: #fff1f2; }
+.bg-rose-50\/40 { background-color: rgba(255,241,242,0.4); }
 .bg-rose-500 { background-color: #f43f5e; }
 .bg-rose-600 { background-color: #e11d48; }
 .bg-sky-50 { background-color: #f0f9ff; }
@@ -76,6 +77,7 @@
 .border-emerald-100 { border-color: #d1fae5; }
 .border-emerald-400 { border-color: #34d399; }
 .border-rose-100 { border-color: #ffe4e6; }
+.border-rose-200 { border-color: #fecdd3; }
 .border-rose-400 { border-color: #fb7185; }
 .border-slate-100 { border-color: #f1f5f9; }
 .border-slate-200 { border-color: #e2e8f0; }
@@ -137,6 +139,15 @@
 .h-8 { height: 2rem; }
 .h-9 { height: 2.25rem; }
 .h-96 { height: 24rem; }
+/* İskelet (skeleton) kartlarını gerçek kart yüksekliklerine 1:1 yaklaştırmak
+   için eklendi (CLS/düzen kayması önleme) — Playwright ile 320/375/414px
+   genişliklerde gerçek dashboard bileşenleri render edilip ölçülerek
+   belirlendi (bkz. get_homepage sonrası renderHero/renderTodayPriority/
+   renderScheduleTimeline). Standart Tailwind h-* ölçeği bu değerlere
+   yetişmediği için köşeli parantezli (arbitrary) değerler kullanıldı. */
+.h-\[360px\] { height: 360px; }
+.h-\[420px\] { height: 420px; }
+.h-\[520px\] { height: 520px; }
 .h-full { height: 100%; }
 .hidden { display: none; }
 .hover\:bg-orange-50:hover { background-color: #fff7ed; }
@@ -228,6 +239,7 @@
 .p-8 { padding: 2rem; }
 .pb-1 { padding-bottom: 0.25rem; }
 .pb-10 { padding-bottom: 2.5rem; }
+.pb-28 { padding-bottom: 7rem; }
 .pb-4 { padding-bottom: 1rem; }
 .pb-5 { padding-bottom: 1.25rem; }
 .pt-2 { padding-top: 0.5rem; }
@@ -268,6 +280,7 @@
 @media (min-width: 640px) { .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 640px) { .sm\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media (min-width: 640px) { .sm\:p-6 { padding: 1.5rem; } }
+@media (min-width: 640px) { .sm\:pb-10 { padding-bottom: 2.5rem; } }
 @media (min-width: 640px) { .sm\:p-7 { padding: 1.75rem; } }
 @media (min-width: 640px) { .sm\:px-6 { padding-left:1.5rem; padding-right:1.5rem; } }
 @media (min-width: 640px) { .sm\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; } }
