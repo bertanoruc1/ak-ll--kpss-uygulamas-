@@ -10,6 +10,13 @@ import { toast, escapeHtml, DIFFICULTY_LABELS, DIFFICULTY_COLORS, scoreColor } f
 // "dersler kısmına girince her konunun içinde içerik VE soru bölümü olsun"
 // isteğinin karşılığı. practice.js artık sadece eski bağlantıları
 // topic.html'e yönlendiren ince bir katman.
+//
+// Gerçek KPSS sınavı her zaman 5 şıklıdır (A, B, C, D, E) — backend artık her
+// soru için 5 şık döndürüyor (bkz. 20240601000330 migration), burada da her
+// şıkkın başına, backend'in gönderdiği sırayla (order_index'e göre) A'dan
+// başlayarak bir harf rozeti ekleniyor.
+const CHOICE_LETTERS = ["A", "B", "C", "D", "E"];
+
 export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, onFinished, showHeader = true, backHref = null }) {
   const tally = { correct: 0, total: 0 };
   let answering = false;
@@ -109,9 +116,10 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
         ${q.image_url ? `<img src="${escapeHtml(q.image_url)}" alt="Soru görseli" class="rounded-xl mb-3 max-h-72 object-contain mx-auto" />` : ""}
         <p class="font-semibold text-slate-900 leading-relaxed whitespace-pre-line">${escapeHtml(q.question_text)}</p>
         <div id="pe-choices" class="space-y-2 mt-4">
-          ${(q.choices || []).map((c) => `
-            <button class="choice-btn w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 transition text-sm font-medium text-slate-700" data-choice="${c.id}">
-              ${escapeHtml(c.choice_text)}
+          ${(q.choices || []).map((c, i) => `
+            <button class="choice-btn w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 transition text-sm font-medium text-slate-700 flex items-start gap-2" data-choice="${c.id}">
+              <span class="shrink-0 w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-[11px] font-bold text-slate-500">${CHOICE_LETTERS[i] || ""}</span>
+              <span>${escapeHtml(c.choice_text)}</span>
             </button>`).join("")}
         </div>
         <div id="pe-result-area" class="mt-4"></div>
@@ -150,10 +158,10 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
       const id = b.dataset.choice;
       if (id === data.correct_choice_id) {
         b.classList.add("border-emerald-400", "bg-emerald-50", "text-emerald-700");
-        b.innerHTML += ` <span class="float-right">✅</span>`;
+        b.innerHTML += ` <span class="ml-auto">✅</span>`;
       } else if (id === btn.dataset.choice && !data.is_correct) {
         b.classList.add("border-rose-400", "bg-rose-50", "text-rose-700");
-        b.innerHTML += ` <span class="float-right">❌</span>`;
+        b.innerHTML += ` <span class="ml-auto">❌</span>`;
       }
     });
 

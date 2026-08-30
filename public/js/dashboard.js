@@ -472,8 +472,16 @@ async function loadTaskSubjects() {
   return taskSubjectsCache;
 }
 
-async function openTaskModal() {
+// existingSession verilirse modal "düzenleme" moduna geçer: alanlar mevcut
+// görevin değerleriyle önceden doldurulur ve kaydetme, create_manual_session
+// yerine update_study_session çağırır. Bu, önceden yalnızca elle eklenen
+// görevler için mümkün olan silmeyi de artık generate_study_plan'in
+// oluşturduğu otomatik görevlere genişletmenin doğal bir uzantısı —
+// kullanıcı artık tek bir otomatik görevi de düzenleyebiliyor/silebiliyor,
+// tüm günü "Saatleri Ayarla" ile sıfırdan oluşturmak zorunda kalmadan.
+async function openTaskModal(existingSession = null) {
   closeTaskModal();
+  const isEdit = !!existingSession;
 
   const overlay = document.createElement("div");
   overlay.id = "task-modal-overlay";
@@ -482,8 +490,8 @@ async function openTaskModal() {
   overlay.style.backdropFilter = "blur(3px)";
   overlay.innerHTML = `
     <div class="card p-6 w-full fadeIn" style="max-width: 440px; max-height: 88vh; overflow-y: auto;">
-      <p class="text-lg font-extrabold text-slate-900 flex items-center gap-2">${icon("pencil", { size: 18 })} Bugün Yapılacak Görev Ekle</p>
-      <p class="text-sm text-slate-500 mt-1">Ne zaman, hangi derste, hangi konuya çalışacağını belirle — saati gelince sana hatırlatalım.</p>
+      <p class="text-lg font-extrabold text-slate-900 flex items-center gap-2">${icon("pencil", { size: 18 })} ${isEdit ? "Görevi Düzenle" : "Bugün Yapılacak Görev Ekle"}</p>
+      <p class="text-sm text-slate-500 mt-1">${isEdit ? "Bu görevin saatini, dersini ya da türünü değiştir." : "Ne zaman, hangi derste, hangi konuya çalışacağını belirle — saati gelince sana hatırlatalım."}</p>
 
       <div class="mt-5">
         <label class="text-xs font-semibold text-slate-600 block mb-1.5">Görev Türü</label>
@@ -525,7 +533,7 @@ async function openTaskModal() {
 
       <div class="grid grid-cols-2 gap-3 mt-5">
         <button id="task-modal-cancel" type="button" class="btn-secondary py-2.5">Vazgeç</button>
-        <button id="task-modal-submit" type="button" class="btn-primary py-2.5">Görevi Oluştur</button>
+        <button id="task-modal-submit" type="button" class="btn-primary py-2.5">${isEdit ? "Kaydet" : "Görevi Oluştur"}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -552,11 +560,14 @@ async function openTaskModal() {
   const endTimeInput = document.getElementById("task-end-time");
   const overlapWarningEl = document.getElementById("task-overlap-warning");
   const submitBtnEl = document.getElementById("task-modal-submit");
+  const defaultSubmitLabel = isEdit ? "Kaydet" : "Görevi Oluştur";
   function updateOverlapWarning() {
-    if (submitBtnEl) { submitBtnEl.dataset.overlapConfirmed = "0"; submitBtnEl.textContent = "Görevi Oluştur"; }
+    if (submitBtnEl) { submitBtnEl.dataset.overlapConfirmed = "0"; submitBtnEl.textContent = defaultSubmitLabel; }
     const st = startTimeInput.value, et = endTimeInput.value;
     if (!st || !et || !overlapWarningEl) { overlapWarningEl?.classList.add("hidden"); return; }
-    const conflicts = findOverlappingSessions(st, et);
+    // Düzenleme modunda görev kendisiyle çakışıyor sayılmasın diye kendi
+    // id'si hariç tutuluyor (findOverlappingSessions'ın excludeId parametresi).
+    const conflicts = findOverlappingSessions(st, et, existingSession?.id ?? null);
     if (conflicts.length > 0) {
       const names = conflicts.map((c) => c.subject_name || SESSION_TYPE_LABELS[c.session_type] || "bir görev").join(", ");
       overlapWarningEl.querySelector("span").textContent = `Bu saat aralığı şununla çakışıyor: ${names}`;
@@ -597,15 +608,27 @@ async function openTaskModal() {
       .join("");
     await loadTopicsForSubject(subjectSelect.value);
   }
+
+  if (isEdit) {
+    typeSelect.value = existingSession.session_type;
+    syncFieldsForType();
+    subjectSelect.value = existingSession.subject_id || "";
+    await loadTopicsForSubject(subjectSelect.value);
+    topicSelect.value = existingSession.topic_id || "";
+    startTimeInput.value = shortTime(existingSession.planned_start);
+    endTimeInput.value = shortTime(existingSession.planned_end || existingSession.planned_start);
+    document.getElementById("task-question-target").value = existingSession.question_target || "";
+  }
+
   subjectSelect.addEventListener("change", () => loadTopicsForSubject(subjectSelect.value));
 
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeTaskModal(); });
   document.getElementById("task-modal-cancel").addEventListener("click", closeTaskModal);
-  document.getElementById("task-modal-submit").addEventListener("click", (e) => submitTaskModal(e.currentTarget));
+  document.getElementById("task-modal-submit").addEventListener("click", (e) => submitTaskModal(e.currentTarget, existingSession));
   document.addEventListener("keydown", handleTaskModalKeydown);
 }
 
-async function submitTaskModal(btn) {
+async function submitTaskModal(btn, existingSession = null) {
   const sessionType = document.getElementById("task-type").value;
   const subjectId = document.getElementById("task-subject").value || null;
   const topicId = document.getElementById("task-topic").value || null;
@@ -623,51 +646,65 @@ async function submitTaskModal(btn) {
     return;
   }
 
+  const isEdit = !!existingSession;
+  const defaultSubmitLabel = isEdit ? "Kaydet" : "Görevi Oluştur";
+
   // Çakışma varsa ilk tıklamada engelle, kullanıcıya göster; bilerek "yine de
-  // ekle" derse (butona ikinci kez basarsa) devam et.
-  const conflicts = findOverlappingSessions(startTime, endTime);
+  // ekle/kaydet" derse (butona ikinci kez basarsa) devam et. Düzenlerken
+  // görev kendisiyle çakışıyor sayılmasın diye kendi id'si hariç tutuluyor.
+  const conflicts = findOverlappingSessions(startTime, endTime, existingSession?.id ?? null);
   if (conflicts.length > 0 && btn.dataset.overlapConfirmed !== "1") {
     const names = conflicts.map((c) => c.subject_name || SESSION_TYPE_LABELS[c.session_type] || "bir görev").join(", ");
-    toast(`⚠️ Bu saatler şununla çakışıyor: ${names}. Yine de eklemek için tekrar "Görevi Oluştur"a bas.`, "error");
+    toast(`⚠️ Bu saatler şununla çakışıyor: ${names}. Yine de devam etmek için tekrar "${defaultSubmitLabel}"a bas.`, "error");
     btn.dataset.overlapConfirmed = "1";
-    btn.textContent = "Yine de Ekle";
+    btn.textContent = isEdit ? "Yine de Kaydet" : "Yine de Ekle";
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Oluşturuluyor...";
+  btn.textContent = isEdit ? "Kaydediliyor..." : "Oluşturuluyor...";
 
-  const { error } = await supabase.rpc("create_manual_session", {
-    p_subject_id: sessionType === "mola" ? null : subjectId,
-    p_topic_id: sessionType === "mola" ? null : topicId,
-    p_session_type: sessionType,
-    p_planned_start: startTime,
-    p_planned_end: endTime,
-    p_question_target: questionTarget,
-    p_plan_date: new Date().toISOString().slice(0, 10),
-  });
+  const { error } = isEdit
+    ? await supabase.rpc("update_study_session", {
+        p_session_id: existingSession.id,
+        p_subject_id: sessionType === "mola" ? null : subjectId,
+        p_topic_id: sessionType === "mola" ? null : topicId,
+        p_session_type: sessionType,
+        p_planned_start: startTime,
+        p_planned_end: endTime,
+        p_question_target: questionTarget,
+      })
+    : await supabase.rpc("create_manual_session", {
+        p_subject_id: sessionType === "mola" ? null : subjectId,
+        p_topic_id: sessionType === "mola" ? null : topicId,
+        p_session_type: sessionType,
+        p_planned_start: startTime,
+        p_planned_end: endTime,
+        p_question_target: questionTarget,
+        p_plan_date: new Date().toISOString().slice(0, 10),
+      });
 
   if (error) {
-    toast(error.message || "Görev oluşturulamadı.", "error");
+    toast(error.message || (isEdit ? "Görev güncellenemedi." : "Görev oluşturulamadı."), "error");
     btn.disabled = false;
-    btn.textContent = "Görevi Oluştur";
+    btn.textContent = defaultSubmitLabel;
     return;
   }
 
   // Görev zamanı gelince hatırlatıcı gönderebilmek için push aboneliğini
   // kur (izin daha önce verilmediyse tarayıcı burada soracak). Kullanıcı
-  // izin vermese/tarayıcı desteklemese bile görev zaten oluşturuldu — bu
-  // adım sessizce başarısız olabilir, görevi engellemez.
+  // izin vermese/tarayıcı desteklemese bile görev zaten oluşturuldu/güncellendi
+  // — bu adım sessizce başarısız olabilir, görevi engellemez.
   ensurePushSubscription().catch(() => {});
 
-  toast("Görev eklendi! Saati gelince hatırlatacağız.", "success");
+  toast(isEdit ? "Görev güncellendi." : "Görev eklendi! Saati gelince hatırlatacağız.", "success");
   closeTaskModal();
   loadHomepage();
 }
 
-async function deleteManualTask(sessionId, btn) {
+async function deleteSession(sessionId, btn) {
   if (btn) btn.disabled = true;
-  const { error } = await supabase.rpc("delete_manual_session", { p_session_id: sessionId });
+  const { error } = await supabase.rpc("delete_study_session", { p_session_id: sessionId });
   if (error) {
     toast(error.message || "Görev silinemedi.", "error");
     if (btn) btn.disabled = false;
@@ -761,7 +798,8 @@ function renderScheduleTimeline(data) {
                   ${overlapIds.has(s.id) ? `<p class="text-xs font-semibold text-rose-600 mt-2 flex items-center gap-1">${icon("exclamation-triangle", { size: 14 })} Bu görev, saat olarak başka bir görevle çakışıyor</p>` : ""}
                 </div>
               </a>
-              ${s.is_manual ? `<button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">${icon("trash", { size: 16 })}</button>` : ""}
+              <button class="edit-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition" data-session-id="${s.id}" title="Görevi düzenle">${icon("pencil", { size: 16 })}</button>
+              <button class="delete-task-btn shrink-0 mt-3 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-session-id="${s.id}" title="Görevi sil">${icon("trash", { size: 16 })}</button>
             </div>
           </div>
         `).join("")}
@@ -769,11 +807,19 @@ function renderScheduleTimeline(data) {
     </div>`;
   document.getElementById("replan-btn").addEventListener("click", () => openPlanModal());
   document.getElementById("add-task-btn").addEventListener("click", () => openTaskModal());
+  el.querySelectorAll(".edit-task-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const session = (currentSessions || sessions).find((s) => s.id === btn.dataset.sessionId);
+      if (session) openTaskModal(session);
+    });
+  });
   el.querySelectorAll(".delete-task-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      deleteManualTask(btn.dataset.sessionId, btn);
+      deleteSession(btn.dataset.sessionId, btn);
     });
   });
 }

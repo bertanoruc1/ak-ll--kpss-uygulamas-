@@ -3,6 +3,12 @@ import { requireAuth, signOut } from "../js/auth.js";
 import { toast, escapeHtml, fmtDate, fmtDateTime, timeAgo } from "../js/ui.js";
 import { EXAM_TYPE_LABELS, NEWS_CATEGORY_LABELS, NOTIFICATION_PRIORITY_LABELS } from "../js/config.js";
 
+// Gerçek KPSS sınavı her zaman 5 şıklıdır (A-E) — bkz. 20240601000330
+// migration (mevcut soru bankasına eksik olan 5. şıkkı ekledi) ve
+// practiceEngine.js'deki CHOICE_LETTERS. Admin panelinden eklenen yeni
+// sorular da baştan 5 şıklı olsun diye burada da aynı sabit kullanılıyor.
+const CHOICE_LETTERS = ["A", "B", "C", "D", "E"];
+
 // ---------------------------------------------------------------------------
 // Bootstrap
 // ---------------------------------------------------------------------------
@@ -737,11 +743,11 @@ function questionNewFormHtml() {
       <textarea name="detailed_solution" class="input" rows="2" placeholder="Detaylı çözüm"></textarea>
       <input name="video_solution_url" class="input" placeholder="Video çözüm URL" />
       <div class="space-y-2">
-        <p class="text-xs font-semibold text-slate-500">Şıklar (doğru olanı işaretleyin)</p>
-        ${[0, 1, 2, 3].map((i) => `
+        <p class="text-xs font-semibold text-slate-500">Şıklar (5 şık, gerçek KPSS formatı — doğru olanı işaretleyin)</p>
+        ${CHOICE_LETTERS.map((letter, i) => `
           <div class="flex items-center gap-2">
             <input type="radio" name="correct_choice" value="${i}" ${i === 0 ? "checked" : ""} required />
-            <input name="choice_${i}" required class="input" placeholder="Şık ${i + 1}" />
+            <input name="choice_${i}" required class="input" placeholder="Şık ${letter}" />
           </div>`).join("")}
       </div>
       <div class="flex gap-2">
@@ -776,10 +782,11 @@ async function handleQuestionCreate(ev, root) {
   }
 
   const correctIdx = Number(fd.get("correct_choice"));
-  const choices = [0, 1, 2, 3].map((i) => ({
+  const choices = CHOICE_LETTERS.map((_, i) => ({
     question_id: inserted.id,
     choice_text: fd.get(`choice_${i}`),
     is_correct: i === correctIdx,
+    order_index: i,
   }));
   const { error: cErr } = await supabase.from("question_choices").insert(choices);
   submitBtn.disabled = false;
@@ -830,21 +837,22 @@ async function loadQuestionsForTopic(root) {
   }
 
   listEl.innerHTML = questionsState.questions.map((q) => {
-    const choices = questionsState.choicesByQuestion.get(q.id) || [];
+    const choices = [...(questionsState.choicesByQuestion.get(q.id) || [])].sort((a, b) => a.order_index - b.order_index);
     return `
       <div class="card p-5 fadeIn">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <span class="badge bg-teal-50 text-teal-700">${escapeHtml(DIFFICULTY_LABELS[q.difficulty] || q.difficulty)}</span>
             ${q.kazanim ? `<span class="text-xs text-slate-400 ml-2">${escapeHtml(q.kazanim)}</span>` : ""}
+            ${choices.length !== 5 ? `<span class="badge bg-amber-50 text-amber-700 ml-2">${choices.length} şık</span>` : ""}
             <p class="font-semibold text-slate-900 mt-2 whitespace-pre-line">${escapeHtml(q.question_text)}</p>
           </div>
           <button data-qid="${q.id}" class="q-delete-btn btn-secondary px-3 py-1.5 text-xs text-rose-600 shrink-0">Sil</button>
         </div>
         <div class="mt-3 space-y-1">
-          ${choices.map((c) => `
+          ${choices.map((c, i) => `
             <div class="text-sm px-3 py-1.5 rounded-lg ${c.is_correct ? "bg-emerald-50 text-emerald-700 font-semibold" : "bg-slate-50 text-slate-600"}">
-              ${c.is_correct ? "✓ " : ""}${escapeHtml(c.choice_text)}
+              ${CHOICE_LETTERS[i] || ""}) ${c.is_correct ? "✓ " : ""}${escapeHtml(c.choice_text)}
             </div>`).join("")}
         </div>
         ${q.kaynak ? `<p class="text-xs text-slate-400 mt-2">Kaynak: ${escapeHtml(q.kaynak)}</p>` : ""}
