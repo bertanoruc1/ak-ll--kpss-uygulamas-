@@ -4,3 +4,15 @@
 .DS_Store
 node_modules/
 *.log
+
+# Proje içi notlar / geçici içerik dosyaları — depoda görünmesin
+ARCHITECTURE.md
+DEPLOY.md
+db-export/README.md
+supabase/functions/ai-chat/README.md
+supabase/functions/send-reminders/README.md
+kpss_icerik_matematik.md
+kpss_icerik_tarih_v2.md
+kpss_icerik_turkce.md
+kpss_icerik_vatandaslik.md
+_to_delete/
