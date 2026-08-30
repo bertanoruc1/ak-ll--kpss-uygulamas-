@@ -8,6 +8,21 @@
 .icon-svg { display: block; flex-shrink: 0; }
 .nav-icon-chip svg, .bottom-icon svg { display: block; }
 
+/* Honeypot alanı (kayıt formu bot koruması) — display:none/visibility:hidden
+   yerine ekran dışına konumlandırılıyor, çünkü bazı basit botlar görünürlüğü
+   sadece "display" özelliğinden kontrol edip onu atlayabiliyor. Gerçek
+   kullanıcılar bu alanı hiç görmez/tab ile de gelmez (tabindex="-1" +
+   aria-hidden), botlar (formu programatik dolduranlar) ise genelde her
+   input'u doldurur — dolu geldiyse istek reddedilir. */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 :root {
   --brand-1: #14b8a6;
   --brand-2: #0ea5e9;

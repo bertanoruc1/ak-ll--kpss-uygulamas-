@@ -6,7 +6,7 @@
 <title>Kayıt Ol · KPSS Akıllı</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>" />
 <link rel="stylesheet" href="css/tailwind-static.css?v=6" />
-<link rel="stylesheet" href="css/styles.css?v=6" />
+<link rel="stylesheet" href="css/styles.css?v=7" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
@@ -33,6 +33,13 @@
         <label class="text-sm font-medium text-slate-700 block mb-1.5">Şifre</label>
         <input id="password" type="password" required minlength="6" class="input" placeholder="En az 6 karakter" />
       </div>
+      <!-- Honeypot: gerçek kullanıcılar bunu görmez/doldurmaz, formu otomatik
+           dolduran botlar genelde doldurur. "website" gibi bot'ların autofill
+           sırasında sıkça hedef aldığı bir isim seçildi. -->
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Web siteniz</label>
+        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
       <button type="submit" id="submit-btn" class="btn-primary w-full py-2.5">Kayıt Ol</button>
       <p id="error-msg" class="text-sm text-rose-600 hidden"></p>
     </form>
@@ -45,9 +52,36 @@ await redirectIfAuthed();
 
 const form = document.getElementById("register-form");
 const errorMsg = document.getElementById("error-msg");
+
+// Basit bot koruması: (1) honeypot alanı doluysa, (2) form sayfa açılışından
+// çok kısa bir süre (<1.2sn) sonra gönderildiyse muhtemelen bir bot/otomatik
+// script'tir — gerçek bir kullanıcının 3 alanı doldurup göndermesi (şifre
+// yöneticisiyle otomatik doldursa bile) bu kadar hızlı olmaz. Bu client-taraflı
+// bir caydırıcıdır; kararlı botlara veya IP başına istek sınırlamasına karşı
+// asıl koruma Supabase projesinin Authentication ayarlarından (CAPTCHA/Turnstile,
+// e-posta doğrulama zorunluluğu) etkinleştirilmelidir — bu depoya erişimimiz
+// sadece migration dosyaları üzerinden olduğu için o ayarlar buradan yönetilemiyor.
+const formRenderedAt = Date.now();
+const MIN_SUBMIT_MS = 1200;
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorMsg.classList.add("hidden");
+
+  const honeypotValue = document.getElementById("website").value;
+  if (honeypotValue) {
+    // Bot: sessizce reddet, gerçek kullanıcı bunu hiç görmeyeceği için
+    // mesajın "doğruluğu" önemli değil.
+    errorMsg.textContent = "Kayıt oluşturulamadı, lütfen tekrar dene.";
+    errorMsg.classList.remove("hidden");
+    return;
+  }
+  if (Date.now() - formRenderedAt < MIN_SUBMIT_MS) {
+    errorMsg.textContent = "Form çok hızlı gönderildi, lütfen tekrar dene.";
+    errorMsg.classList.remove("hidden");
+    return;
+  }
+
   const btn = document.getElementById("submit-btn");
   btn.disabled = true; btn.textContent = "Kayıt oluşturuluyor...";
   const { data, error } = await supabase.auth.signUp({

@@ -738,7 +738,7 @@ function renderScheduleTimeline(data) {
               <div class="w-3 h-3 rounded-full mt-1.5 shrink-0" style="background: ${s.status === "done" ? "#10b981" : s.status === "skipped" ? "#cbd5e1" : "#14b8a6"};"></div>
               ${i < sessions.length - 1 ? '<div class="w-px flex-1 bg-slate-200 my-0.5"></div>' : ""}
             </div>
-            <div class="flex-1 pb-4 flex items-start gap-1.5">
+            <div class="flex-1 pb-4 flex items-start gap-1.5 min-w-0">
               <a href="${sessionLink(s)}" class="flex-1 group min-w-0">
                 <div class="rounded-xl border ${overlapIds.has(s.id) ? "border-rose-200 bg-rose-50/40" : "border-slate-100"} group-hover:border-teal-200 group-hover:bg-teal-50/40 transition p-3">
                   <div class="flex items-start justify-between gap-2">
