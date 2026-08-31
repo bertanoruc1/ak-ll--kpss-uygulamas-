@@ -142,14 +142,17 @@ function render() {
       </div>
 
       <div class="card p-5 mt-4">
-        <p class="font-bold text-slate-900 mb-2">🎬 Video</p>
+        <div class="flex items-center gap-2 mb-2">
+          <p class="font-bold text-slate-900">🎬 Video</p>
+          ${!topicContent?.video_url ? `<span class="badge bg-amber-50 text-amber-700">🔜 Yakında geliyor</span>` : ""}
+        </div>
         ${topicContent?.video_url ? `
           <a href="${safeUrl(topicContent.video_url)}" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition">
             <span class="text-2xl">▶️</span>
             <span class="text-sm font-medium text-teal-600 truncate">${escapeHtml(topicContent.video_url)}</span>
           </a>
           <button id="video-watched-btn" class="btn-secondary mt-3 px-4 py-2 text-sm">Videoyu İzledim</button>
-        ` : `<p class="text-sm text-slate-400 italic">İçerik henüz eklenmedi.</p>`}
+        ` : `<p class="text-sm text-slate-400 italic">Bu konu için video anlatım şu anda hazırlanıyor, yakında burada olacak.</p>`}
       </div>
 
       <div class="card p-5 mt-4 text-center" style="background: linear-gradient(135deg, #f0fdfa, #f0f9ff); border: 1px solid #ccfbf1;">
