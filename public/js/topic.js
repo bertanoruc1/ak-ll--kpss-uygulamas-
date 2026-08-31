@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
-import { toast, escapeHtml, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js?v=2";
+import { mountNav } from "./nav.js?v=3";
+import { toast, escapeHtml, safeUrl, scoreColor, renderMarkdown, LEVEL_LABELS } from "./ui.js?v=3";
 import { createPracticeEngine } from "./practiceEngine.js";
 
 const auth = await requireAuth();
@@ -144,7 +144,7 @@ function render() {
       <div class="card p-5 mt-4">
         <p class="font-bold text-slate-900 mb-2">🎬 Video</p>
         ${topicContent?.video_url ? `
-          <a href="${escapeHtml(topicContent.video_url)}" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition">
+          <a href="${safeUrl(topicContent.video_url)}" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition">
             <span class="text-2xl">▶️</span>
             <span class="text-sm font-medium text-teal-600 truncate">${escapeHtml(topicContent.video_url)}</span>
           </a>

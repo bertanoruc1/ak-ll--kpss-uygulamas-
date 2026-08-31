@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { toast, escapeHtml, DIFFICULTY_LABELS, DIFFICULTY_COLORS, scoreColor } from "./ui.js?v=2";
+import { toast, escapeHtml, safeUrl, DIFFICULTY_LABELS, DIFFICULTY_COLORS, scoreColor } from "./ui.js?v=3";
 
 // Paylaşılan soru çözme motoru: hedef belirleme (kaç soruda bitecek),
 // soru getirme, cevaplama, sonuç ekranı, sonsuz döngü koruması ve — bir
@@ -237,7 +237,7 @@ export function createPracticeEngine({ topicId, sessionId, mountEl, topicName, o
     const parts = [];
     if (data.explanation) parts.push(`<p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(data.explanation)}</p>`);
     if (data.detailed_solution) parts.push(`<p class="text-sm text-slate-600 leading-relaxed mt-2 whitespace-pre-line">${escapeHtml(data.detailed_solution)}</p>`);
-    if (data.video_solution_url) parts.push(`<a href="${escapeHtml(data.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline mt-2">▶️ Video çözümü izle</a>`);
+    if (data.video_solution_url) parts.push(`<a href="${safeUrl(data.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline mt-2">▶️ Video çözümü izle</a>`);
 
     box.innerHTML = parts.length ? parts.join("") : `<p class="text-sm text-slate-400 italic">Açıklama eklenmemiş.</p>`;
   }

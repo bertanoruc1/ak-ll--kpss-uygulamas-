@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth, signOut } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
-import { toast, escapeHtml } from "./ui.js?v=2";
+import { mountNav } from "./nav.js?v=3";
+import { toast, escapeHtml } from "./ui.js?v=3";
 import { EXAM_TYPE_LABELS } from "./config.js";
 
 const auth = await requireAuth();
@@ -115,22 +115,22 @@ function render(student, gami, achievements) {
 
         <div>
           <label class="text-sm font-semibold text-slate-800 block mb-2">Hedef Puan</label>
-          <input id="target_score" type="number" step="0.01" class="input" value="${student?.target_score ?? ""}" placeholder="ör. 85" />
+          <input id="target_score" type="number" step="0.01" class="input" value="${escapeHtml(student?.target_score ?? "")}" placeholder="ör. 85" />
         </div>
 
         <div>
           <label class="text-sm font-semibold text-slate-800 block mb-2">Günlük Çalışma Süresi (dk)</label>
-          <input id="daily_study_minutes" type="number" class="input" value="${student?.daily_study_minutes ?? 120}" />
+          <input id="daily_study_minutes" type="number" class="input" value="${escapeHtml(student?.daily_study_minutes ?? 120)}" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-sm font-semibold text-slate-800 block mb-2">Başlangıç Saati</label>
-            <input id="preferred_start_time" type="time" class="input" value="${(student?.preferred_start_time || "19:00").slice(0, 5)}" />
+            <input id="preferred_start_time" type="time" class="input" value="${escapeHtml((student?.preferred_start_time || "19:00").slice(0, 5))}" />
           </div>
           <div>
             <label class="text-sm font-semibold text-slate-800 block mb-2">Bitiş Saati</label>
-            <input id="preferred_end_time" type="time" class="input" value="${(student?.preferred_end_time || "21:00").slice(0, 5)}" />
+            <input id="preferred_end_time" type="time" class="input" value="${escapeHtml((student?.preferred_end_time || "21:00").slice(0, 5))}" />
           </div>
         </div>
 
@@ -147,10 +147,62 @@ function render(student, gami, achievements) {
       </form>
 
       <button id="signout-btn" class="btn-secondary w-full py-3">Çıkış Yap</button>
+
+      <div class="text-center">
+        <a href="gizlilik.html" class="text-xs text-slate-400 hover:text-teal-600 hover:underline">Gizlilik Politikası</a>
+      </div>
+
+      <!-- Hesap silme -->
+      <div class="card p-6 border border-rose-100">
+        <p class="font-bold text-rose-600">⚠️ Tehlikeli Bölge</p>
+        <p class="text-sm text-slate-500 mt-1 mb-4">Hesabını sildiğinde tüm ilerlemen, sohbet geçmişin ve kişisel verilerin kalıcı olarak silinir. Bu işlem geri alınamaz.</p>
+        <button id="delete-account-btn" class="btn-secondary w-full py-3 text-rose-600 hover:bg-rose-50">Hesabımı Sil</button>
+        <div id="delete-confirm-box" class="hidden mt-4 space-y-3 pt-4 border-t border-rose-100">
+          <p class="text-sm text-slate-700">Emin misin? Onaylamak için aşağıya <strong>SİL</strong> yaz.</p>
+          <input id="delete-confirm-input" type="text" class="input" placeholder="SİL" autocomplete="off" />
+          <div class="flex gap-2">
+            <button id="delete-confirm-cancel" type="button" class="btn-secondary flex-1 py-2.5">Vazgeç</button>
+            <button id="delete-confirm-submit" type="button" class="btn-primary flex-1 py-2.5 bg-rose-600 hover:bg-rose-700">Kalıcı Olarak Sil</button>
+          </div>
+        </div>
+      </div>
     </div>`;
 
   document.getElementById("profile-form").addEventListener("submit", handleSubmit);
   document.getElementById("signout-btn").addEventListener("click", () => signOut());
+
+  const deleteBtn = document.getElementById("delete-account-btn");
+  const deleteBox = document.getElementById("delete-confirm-box");
+  const deleteInput = document.getElementById("delete-confirm-input");
+  const deleteSubmitBtn = document.getElementById("delete-confirm-submit");
+
+  deleteBtn.addEventListener("click", () => {
+    deleteBox.classList.remove("hidden");
+    deleteBtn.classList.add("hidden");
+    deleteInput.focus();
+  });
+  document.getElementById("delete-confirm-cancel").addEventListener("click", () => {
+    deleteBox.classList.add("hidden");
+    deleteBtn.classList.remove("hidden");
+    deleteInput.value = "";
+  });
+  deleteSubmitBtn.addEventListener("click", async () => {
+    if (deleteInput.value.trim().toUpperCase() !== "SİL" && deleteInput.value.trim().toUpperCase() !== "SIL") {
+      toast("Onaylamak için kutuya \"SİL\" yazmalısın.", "error");
+      return;
+    }
+    deleteSubmitBtn.disabled = true;
+    deleteSubmitBtn.textContent = "Siliniyor...";
+    const { error } = await supabase.rpc("delete_own_account");
+    if (error) {
+      toast(error.message || "Hesap silinemedi.", "error");
+      deleteSubmitBtn.disabled = false;
+      deleteSubmitBtn.textContent = "Kalıcı Olarak Sil";
+      return;
+    }
+    await supabase.auth.signOut();
+    window.location.href = "login.html";
+  });
 }
 
 async function handleSubmit(e) {

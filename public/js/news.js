@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
-import { toast, escapeHtml, timeAgo, fmtDateTime } from "./ui.js?v=2";
+import { mountNav } from "./nav.js?v=3";
+import { toast, escapeHtml, safeUrl, timeAgo, fmtDateTime } from "./ui.js?v=3";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
 
 // Kategori rozetleri için renk paleti (koyu metin / açık zemin eşleşmeleri)
@@ -92,7 +92,7 @@ function newsCard(item) {
         <span class="text-xs font-medium text-slate-400">${escapeHtml(item.source || "Kaynak belirtilmemiş")}</span>
         ${
           item.source_url
-            ? `<a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">Resmi kaynağı görüntüle →</a>`
+            ? `<a href="${safeUrl(item.source_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:text-teal-700">Resmi kaynağı görüntüle →</a>`
             : ""
         }
       </div>

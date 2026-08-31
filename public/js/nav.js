@@ -1,5 +1,6 @@
 import { signOut } from "./auth.js";
 import { icon } from "./icons.js";
+import "./pwa.js"; // her mountNav() kullanan sayfada service worker'ı kaydet + yükleme banner'ını etkinleştir
 
 // NOT: "Sorular" artık ayrı bir bölüm/sekme değil — her konunun içeriğiyle
 // birlikte, konu sayfasının (topic.html) içine gömülü olarak sunuluyor.

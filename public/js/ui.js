@@ -12,6 +12,24 @@ export function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// escapeHtml() metindeki &<>"' karakterlerini kodluyor ama bir URL'nin
+// ŞEMASINI (javascript:, data:, vbs: vb.) doğrulamıyor — bir href'e
+// escapeHtml(url) yazmak, url "javascript:..." ile başlıyorsa yine de
+// tıklanınca kod çalıştırır. safeUrl(), yalnızca http(s) ile başlayan (veya
+// şema belirtmeyen göreli) adreslere izin verir, aksi halde zararsız "#"
+// döner. Veritabanından gelen (news_items/topic_contents/questions gibi,
+// şu an sadece admin tarafından yazılabilen ama gelecekte güven sınırı
+// değişebilecek) her url alanı href'e yazılmadan önce bundan geçirilmeli.
+export function safeUrl(url) {
+  if (!url) return "#";
+  const trimmed = String(url).trim();
+  if (/^\s*(javascript|data|vbscript|file):/i.test(trimmed)) return "#"; // tehlikeli şemalar
+  if (/^https?:\/\//i.test(trimmed)) return escapeHtml(trimmed); // http(s)
+  if (/^\/\//.test(trimmed)) return escapeHtml(trimmed); // protokolsüz (//ornek.com)
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return "#"; // tanınmayan başka bir şema -> reddet
+  return escapeHtml(trimmed); // göreli yol (ör. /topic.html?id=...)
+}
+
 export function fmtMinutes(min) {
   if (min == null) return "0dk";
   const h = Math.floor(min / 60), m = min % 60;

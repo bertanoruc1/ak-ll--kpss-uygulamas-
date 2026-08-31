@@ -1,6 +1,7 @@
+import "../js/pwa.js";
 import { supabase } from "../js/supabaseClient.js";
 import { requireAuth, signOut } from "../js/auth.js";
-import { toast, escapeHtml, fmtDate, fmtDateTime, timeAgo } from "../js/ui.js";
+import { toast, escapeHtml, safeUrl, fmtDate, fmtDateTime, timeAgo } from "../js/ui.js";
 import { EXAM_TYPE_LABELS, NEWS_CATEGORY_LABELS, NOTIFICATION_PRIORITY_LABELS } from "../js/config.js";
 
 // Gerçek KPSS sınavı her zaman 5 şıklıdır (A-E) — bkz. 20240601000330
@@ -256,7 +257,7 @@ function examCardHtml(e) {
         <div>🎯 Güven: <strong>%${Math.round((e.confidence ?? 1) * 100)}</strong></div>
         <div>🔢 Versiyon: <strong>${e.version ?? 1}</strong></div>
         <div>🕓 Son Doğrulama: <strong>${e.last_verified_at ? timeAgo(e.last_verified_at) : "—"}</strong></div>
-        <div class="col-span-2 sm:col-span-3">🔗 Kaynak: <strong>${escapeHtml(e.source || "—")}</strong> ${e.source_url ? `· <a href="${escapeHtml(e.source_url)}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">bağlantı</a>` : ""}</div>
+        <div class="col-span-2 sm:col-span-3">🔗 Kaynak: <strong>${escapeHtml(e.source || "—")}</strong> ${e.source_url ? `· <a href="${safeUrl(e.source_url)}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">bağlantı</a>` : ""}</div>
       </div>
       ${isEditing ? examEditFormHtml(e) : ""}
     </div>`;

@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
-import { toast, escapeHtml, timeAgo } from "./ui.js?v=2";
+import { mountNav } from "./nav.js?v=3";
+import { toast, escapeHtml, safeUrl, timeAgo } from "./ui.js?v=3";
 
 const auth = await requireAuth();
 if (!auth) throw new Error("not authenticated");
@@ -119,7 +119,7 @@ function renderMistakeItem(m) {
         <div id="${detailId}" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
           ${q.explanation ? `<p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(q.explanation)}</p>` : ""}
           ${q.detailed_solution ? `<p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(q.detailed_solution)}</p>` : ""}
-          ${q.video_solution_url ? `<a href="${escapeHtml(q.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline">▶️ Video çözümü izle</a>` : ""}
+          ${q.video_solution_url ? `<a href="${safeUrl(q.video_solution_url)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:underline">▶️ Video çözümü izle</a>` : ""}
         </div>` : ""}
     </div>`;
 }

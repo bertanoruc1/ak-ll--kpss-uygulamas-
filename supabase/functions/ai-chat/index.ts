@@ -23,14 +23,27 @@
 //
 // Deploy: bkz. bu klasördeki README.md (supabase functions deploy ai-chat +
 // supabase secrets set ANTHROPIC_API_KEY=... ANTHROPIC_MODEL=...)
+//
+// GÜVENLİK (2026-08-30 denetiminde eklendi):
+//   - CORS artık isteğe bağlı olarak ALLOWED_ORIGIN ortam değişkenine
+//     kısıtlanabiliyor (ayarlanmazsa geriye dönük uyumluluk için "*" kalır —
+//     kilitlemek için: `supabase secrets set ALLOWED_ORIGIN=https://siteniz.com`).
+//   - Kullanıcı başına basit bir hız sınırı eklendi (varsayılan: saatte 20
+//     mesaj) — gerçek bir ücretli LLM API'sini çağırdığı için, sınırsız
+//     çağrı kötüye kullanılırsa doğrudan geliştiricinin Anthropic faturasını
+//     şişirebiliyordu.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+const RATE_LIMIT_PER_HOUR = 20;
+
 const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
 };
 
 function json(body: unknown, status = 200) {
@@ -133,6 +146,20 @@ Deno.serve(async (req: Request) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) return json({ error: "unauthorized" }, 401);
 
+    // Hız sınırı: son 1 saatte bu kullanıcının kaç mesajı loglanmış (RLS
+    // sayesinde bu sorgu zaten sadece kendi satırlarını görebilir).
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await userClient
+      .from("ai_interactions")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", oneHourAgo);
+    if ((recentCount ?? 0) >= RATE_LIMIT_PER_HOUR) {
+      return json(
+        { error: "rate_limited", message: "Çok fazla mesaj gönderdin, biraz sonra tekrar dene." },
+        429
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const message = String(body?.message || "").trim().slice(0, 4000);
     if (!message) return json({ error: "empty_message" }, 400);
@@ -181,6 +208,17 @@ Deno.serve(async (req: Request) => {
       .trim();
 
     if (!reply) return json({ error: "empty_reply" }, 502);
+
+    // Konuşmayı logla (hem hız-sınırı hesaplamasının doğru çalışması hem de
+    // kullanıcının kendi geçmişini görebilmesi için) — kullanıcının henüz
+    // onboarding'i tamamlamamış olması (students satırı yok) gibi nadir bir
+    // durumda FK hatası verirse sohbeti bozmasın diye best-effort.
+    userClient
+      .from("ai_interactions")
+      .insert({ user_id: userData.user.id, message, response: reply })
+      .then(({ error }) => {
+        if (error) console.error("ai_interactions log failed:", error.message);
+      });
 
     return json({ reply });
   } catch (e: any) {

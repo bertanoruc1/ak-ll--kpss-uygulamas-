@@ -8,9 +8,37 @@
 // Çağrı şekilleri:
 //   POST { "source_id": "<uuid>" }  -> yalnızca o kaynağı senkronize eder (admin "Şimdi Senkronize Et")
 //   POST {}                          -> kontrol zamanı gelen tüm aktif kaynakları senkronize eder (pg_cron)
+//
+// GÜVENLİK (2026-08-30 denetiminde eklendi): Daha önce hiçbir çağıran-doğrulaması
+// yoktu — herkese açık anon key ile bile (Supabase'in varsayılan JWT kontrolü
+// yalnızca "geçerli BİR JWT mi" der) bu fonksiyon service_role yetkisiyle
+// çalıştırılabiliyor, hatta `source_id` verilerek 000-frekans kontrolü bile
+// atlatılıp dış sitelere (ÖSYM/MEB) istenildiği kadar zorla istek attırılabiliyordu.
+// Şimdi iki geçerli çağıran türü var: (1) pg_cron — `x-cron-secret` header'ı
+// CRON_SECRET ortam değişkenine eşit olmalı; (2) admin paneli — çağıranın kendi
+// Supabase oturum JWT'si ile giriş yapmış VE is_admin() = true olması gerekir.
+// İkisi de sağlanmazsa 401 döner.
+// Deploy: supabase secrets set CRON_SECRET=...
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+
+async function isAuthorized(req: Request, supabaseUrl: string, anonKey: string): Promise<boolean> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const providedSecret = req.headers.get("x-cron-secret");
+  if (cronSecret && providedSecret === cronSecret) return true;
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return false;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) return false;
+  const { data: isAdminResult, error: adminErr } = await userClient.rpc("is_admin");
+  if (adminErr) return false;
+  return isAdminResult === true;
+}
 
 async function sha256(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
@@ -48,7 +76,16 @@ function findDateCandidates(text: string): string[] {
 Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    if (!(await isAuthorized(req, supabaseUrl, anonKey))) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, serviceKey);
 
     let body: any = {};

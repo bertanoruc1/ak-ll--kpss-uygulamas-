@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
+import { mountNav } from "./nav.js?v=3";
 import { toast, escapeHtml } from "./ui.js?v=2";
 import { icon } from "./icons.js";
 

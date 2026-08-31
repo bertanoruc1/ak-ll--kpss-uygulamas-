@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth } from "./auth.js";
-import { mountNav } from "./nav.js?v=2";
+import { mountNav } from "./nav.js?v=3";
 import { toast, escapeHtml, fmtDate, SESSION_TYPE_LABELS, SESSION_TYPE_ICONS, scoreColor, countUp } from "./ui.js?v=2";
 import { NEWS_CATEGORY_LABELS } from "./config.js";
 import { ensurePushSubscription } from "./push.js";

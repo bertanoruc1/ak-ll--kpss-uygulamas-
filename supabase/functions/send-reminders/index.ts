@@ -17,8 +17,18 @@
 // Deploy:
 //   supabase functions deploy send-reminders
 //   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:...
+//   supabase secrets set CRON_SECRET=...
 // (Tam talimat: bkz. bu klasördeki README.md)
-
+//
+// GÜVENLİK (2026-08-30 denetiminde eklendi): Bu fonksiyon yalnızca pg_cron
+// tarafından tetiklenmesi gereken, hiçbir kullanıcı arayüzünden çağrılmayan
+// bir arka plan işidir. Daha önce hiçbir çağıran-doğrulaması yoktu — Supabase
+// platformunun varsayılan JWT doğrulaması yalnızca "geçerli BİR Supabase JWT'si
+// mi" diye bakar, herkese açık anon key de geçerli bir JWT'dir; yani pratikte
+// İNTERNETTEKİ HERKES bu fonksiyonu doğrudan çağırıp service_role yetkisiyle
+// push bildirimi gönderilmesini tetikleyebiliyordu. Şimdi, cron job'ının
+// gönderdiği `x-cron-secret` header'ının `CRON_SECRET` ortam değişkenine eşit
+// olması zorunlu; eşleşmezse 401 döner.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -30,8 +40,17 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   mola: "Mola",
 };
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const providedSecret = req.headers.get("x-cron-secret");
+    if (!cronSecret || providedSecret !== cronSecret) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");

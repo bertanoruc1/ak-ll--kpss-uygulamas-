@@ -6,7 +6,15 @@ export const SUPABASE_ANON_KEY = "sb_publishable_mJzUaaJskzVDkzoctF8tHw_CEya7aLx
 // Eşleşen PRIVATE anahtar yalnızca Supabase Edge Function secret'ı olarak
 // saklanır, hiçbir zaman bu depoya (repo) yazılmaz — bkz.
 // supabase/functions/send-reminders/README.md.
-export const VAPID_PUBLIC_KEY = "BNs0rKPIYVX0llovMXRfL0c0Vd9yEBKRtdHGp5fgTEzRQsypDOsw-99nOCjIwx-B9BASg2enGSp8ekpb1rPxqMA";
+//
+// ROTASYON NOTU (2026-08-30 güvenlik denetimi): Eski çift, PRIVATE anahtarı
+// yanlışlıkla send-reminders/README.md içine düz metin olarak yazılmış ve
+// git'e commit edilmiş olduğu için sızmış sayılıyor — bu yüzden tamamen yeni
+// bir VAPID çifti üretildi ve burada güncellendi. Eski anahtarla oluşturulmuş
+// TÜM push abonelikleri artık geçersizdir (public key değiştiği için tarayıcı
+// otomatik olarak yeni abonelik isteyecek) — kullanıcıların bildirim iznini
+// tekrar vermesi gerekebilir, bu normaldir.
+export const VAPID_PUBLIC_KEY = "BG-PBgyM3gYJkV4Boqg_NcX9k7vu4zOEQ5L307mx8s0jiUM_NY1qO_rlli0bz1WSpqniX_KSt-r3t178hsUUq5Y";
 
 export const EXAM_TYPE_LABELS = {
   kpss_lisans: "KPSS Lisans",
