@@ -1,8 +1,8 @@
 import { supabase } from "./supabaseClient.js";
 import { requireAuth, signOut } from "./auth.js";
 import { mountNav } from "./nav.js?v=3";
-import { toast, escapeHtml } from "./ui.js?v=3";
-import { EXAM_TYPE_LABELS } from "./config.js";
+import { toast, escapeHtml, timeAgo } from "./ui.js?v=3";
+import { EXAM_TYPE_LABELS, REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, REPORT_STATUS_COLORS } from "./config.js";
 
 const auth = await requireAuth();
 if (!auth) {
@@ -58,7 +58,83 @@ function renderAchievements(achievements) {
     </div>`;
 }
 
-function render(student, gami, achievements) {
+function reportTypeOptions(selected) {
+  return Object.entries(REPORT_TYPE_LABELS).map(([key, label]) =>
+    `<option value="${key}" ${key === selected ? "selected" : ""}>${escapeHtml(label)}</option>`
+  ).join("");
+}
+
+function myReportRowHtml(r) {
+  const statusColor = REPORT_STATUS_COLORS[r.status] || "#64748b";
+  return `
+    <div class="py-3">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="badge bg-teal-50 text-teal-700">${escapeHtml(REPORT_TYPE_LABELS[r.report_type] || r.report_type)}</span>
+        <span class="badge" style="background:${statusColor}1a; color:${statusColor};">${escapeHtml(REPORT_STATUS_LABELS[r.status] || r.status)}</span>
+        <span class="text-xs text-slate-400">${timeAgo(r.created_at)}</span>
+      </div>
+      <p class="text-sm text-slate-700 mt-1.5 whitespace-pre-line">${escapeHtml(r.message)}</p>
+      ${r.admin_note ? `<p class="text-xs text-slate-500 mt-1.5 bg-slate-50 rounded-lg p-2"><strong>Yanıt:</strong> ${escapeHtml(r.admin_note)}</p>` : ""}
+    </div>`;
+}
+
+function renderReportSection(myReports) {
+  return `
+    <div class="card p-6">
+      <p class="font-bold text-slate-900">🐞 Sorun Bildir</p>
+      <p class="text-xs text-slate-500 mt-1 mb-4">Bir hata mı gördün, eksik bir konu ya da soru mu fark ettin? Bize bildir, inceleyelim.</p>
+      <form id="report-form" class="space-y-3">
+        <label class="text-sm font-semibold text-slate-800 block">Kategori
+          <select id="report_type" class="input mt-1.5">${reportTypeOptions("hata")}</select>
+        </label>
+        <label class="text-sm font-semibold text-slate-800 block">Açıklama
+          <textarea id="report_message" required class="input mt-1.5" rows="3" placeholder="Ne oldu, nerede karşılaştın? Ne kadar detay verirsen o kadar hızlı çözeriz."></textarea>
+        </label>
+        <label class="text-sm font-semibold text-slate-800 block">İlgili sayfa/konu (opsiyonel)
+          <input id="report_context" type="text" class="input mt-1.5" placeholder="ör. Matematik > Kümeler konusu" />
+        </label>
+        <button type="submit" id="report-submit-btn" class="btn-primary w-full py-3">Gönder</button>
+      </form>
+      ${myReports.length ? `
+        <div class="mt-5 pt-4 border-t border-slate-100">
+          <p class="text-xs font-bold text-slate-400 mb-1">Gönderdiğin Bildirimler</p>
+          <div class="divide-y divide-slate-100">
+            ${myReports.map((r) => myReportRowHtml(r)).join("")}
+          </div>
+        </div>` : ""}
+    </div>`;
+}
+
+async function handleReportSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById("report-submit-btn");
+  const message = document.getElementById("report_message").value.trim();
+  if (!message) {
+    toast("Lütfen bir açıklama yaz.", "error");
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Gönderiliyor...";
+
+  const { error } = await supabase.from("user_reports").insert({
+    user_id: user.id,
+    report_type: document.getElementById("report_type").value,
+    message,
+    page_context: document.getElementById("report_context").value.trim() || null,
+  });
+
+  btn.disabled = false;
+  btn.textContent = "Gönder";
+
+  if (error) {
+    toast(error.message || "Bildirim gönderilemedi.", "error");
+    return;
+  }
+  toast("Bildirimin alındı, teşekkürler!", "success");
+  await loadProfile();
+}
+
+function render(student, gami, achievements, myReports) {
   const name = profile?.full_name || "";
   const email = profile?.email || user.email || "";
 
@@ -146,6 +222,8 @@ function render(student, gami, achievements) {
         <button type="submit" id="save-btn" class="btn-primary w-full py-3">Kaydet</button>
       </form>
 
+      ${renderReportSection(myReports)}
+
       <button id="signout-btn" class="btn-secondary w-full py-3">Çıkış Yap</button>
 
       <div class="text-center">
@@ -169,6 +247,7 @@ function render(student, gami, achievements) {
     </div>`;
 
   document.getElementById("profile-form").addEventListener("submit", handleSubmit);
+  document.getElementById("report-form").addEventListener("submit", handleReportSubmit);
   document.getElementById("signout-btn").addEventListener("click", () => signOut());
 
   const deleteBtn = document.getElementById("delete-account-btn");
@@ -243,10 +322,11 @@ async function handleSubmit(e) {
 
 async function loadProfile() {
   errorEl.classList.add("hidden");
-  const [{ data: student, error: studentErr }, { data: gami }, { data: achievements }] = await Promise.all([
+  const [{ data: student, error: studentErr }, { data: gami }, { data: achievements }, { data: myReports }] = await Promise.all([
     supabase.from("students").select("*").eq("user_id", user.id).single(),
     supabase.from("user_gamification").select("*").eq("user_id", user.id).single(),
     supabase.rpc("get_my_achievements"),
+    supabase.from("user_reports").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
   ]);
 
   if (studentErr) {
@@ -255,7 +335,7 @@ async function loadProfile() {
     errorEl.classList.remove("hidden");
     return;
   }
-  render(student, gami, achievements || []);
+  render(student, gami, achievements || [], myReports || []);
 }
 
 document.getElementById("retry-btn").addEventListener("click", loadProfile);

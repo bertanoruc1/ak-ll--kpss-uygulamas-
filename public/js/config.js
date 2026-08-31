@@ -33,3 +33,21 @@ export const NEWS_CATEGORY_LABELS = {
 
 export const NOTIFICATION_PRIORITY_LABELS = { kritik: "Kritik", onemli: "Önemli", normal: "Normal", dusuk: "Düşük" };
 export const NOTIFICATION_PRIORITY_COLORS = { kritik: "#dc2626", onemli: "#d97706", normal: "#14b8a6", dusuk: "#94a3b8" };
+
+// "Sorun Bildir" (profil sayfası) + admin panelindeki "Sorun Bildirimleri"
+// sekmesi ortak kullanır — bkz. 20240601000390_user_reports_and_admin_panel.sql
+export const REPORT_TYPE_LABELS = {
+  hata: "Hata",
+  eksik_konu: "Eksik Konu",
+  eksik_soru: "Eksik Soru",
+  icerik_hatasi: "İçerik Hatası",
+  oneri: "Öneri",
+  diger: "Diğer",
+};
+export const REPORT_STATUS_LABELS = {
+  acik: "Açık",
+  inceleniyor: "İnceleniyor",
+  cozuldu: "Çözüldü",
+  reddedildi: "Reddedildi",
+};
+export const REPORT_STATUS_COLORS = { acik: "#dc2626", inceleniyor: "#d97706", cozuldu: "#059669", reddedildi: "#64748b" };

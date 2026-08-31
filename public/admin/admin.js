@@ -2,7 +2,7 @@ import "../js/pwa.js";
 import { supabase } from "../js/supabaseClient.js";
 import { requireAuth, signOut } from "../js/auth.js";
 import { toast, escapeHtml, safeUrl, fmtDate, fmtDateTime, timeAgo } from "../js/ui.js";
-import { EXAM_TYPE_LABELS, NEWS_CATEGORY_LABELS, NOTIFICATION_PRIORITY_LABELS } from "../js/config.js";
+import { EXAM_TYPE_LABELS, NEWS_CATEGORY_LABELS, NOTIFICATION_PRIORITY_LABELS, REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, REPORT_STATUS_COLORS } from "../js/config.js";
 
 // Gerçek KPSS sınavı her zaman 5 şıklıdır (A-E) — bkz. 20240601000330
 // migration (mevcut soru bankasına eksik olan 5. şıkkı ekledi) ve
@@ -54,6 +54,7 @@ const TABS = [
   { id: "aiqueue", label: "AI Onay Kuyruğu", icon: "🤖" },
   { id: "sync", label: "Veri Kaynakları", icon: "🔄" },
   { id: "audit", label: "Audit Log", icon: "🧾" },
+  { id: "reports", label: "Sorun Bildirimleri", icon: "🚨" },
   { id: "students", label: "Öğrenciler", icon: "🎓" },
   { id: "notify", label: "Bildirim Gönder", icon: "🔔" },
 ];
@@ -111,7 +112,7 @@ async function renderActiveTab() {
 // ---------------------------------------------------------------------------
 
 async function renderOverview(root) {
-  root.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}</div>`;
+  root.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}${skeletonRows(1, "h-28")}</div>`;
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -122,12 +123,14 @@ async function renderOverview(root) {
     { count: newsCount },
     { count: pendingReviewCount },
     { count: aiPendingCount },
+    { count: openReportCount },
   ] = await Promise.all([
     supabase.from("students").select("*", { count: "exact", head: true }),
     supabase.from("user_answers").select("*", { count: "exact", head: true }).gte("answered_at", todayStart.toISOString()),
     supabase.from("news_items").select("*", { count: "exact", head: true }),
     supabase.from("admin_audit_log").select("*", { count: "exact", head: true }).eq("action", "pending_review"),
     supabase.from("ai_content_queue").select("*", { count: "exact", head: true }).eq("status", "ai_generated"),
+    supabase.from("user_reports").select("*", { count: "exact", head: true }).in("status", ["acik", "inceleniyor"]),
   ]);
 
   const cards = [
@@ -136,17 +139,20 @@ async function renderOverview(root) {
     { label: "Toplam Haber", value: newsCount ?? 0, icon: "📰" },
     { label: "Bekleyen Senkron İncelemesi", value: pendingReviewCount ?? 0, icon: "🔍" },
     { label: "Bekleyen AI İçerik", value: aiPendingCount ?? 0, icon: "🤖" },
+    { label: "Açık Sorun Bildirimi", value: openReportCount ?? 0, icon: "🚨", tabId: "reports" },
   ];
 
   root.innerHTML = `
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 fadeIn">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 fadeIn">
       ${cards.map((c) => `
-        <div class="card p-5">
+        <div class="card p-5 ${c.tabId ? "cursor-pointer hover:shadow-md transition" : ""}" ${c.tabId ? `id="overview-card-${c.tabId}"` : ""}>
           <div class="text-2xl">${c.icon}</div>
           <p class="text-2xl font-extrabold text-slate-900 mt-2">${c.value}</p>
           <p class="text-xs text-slate-500 mt-1">${escapeHtml(c.label)}</p>
         </div>`).join("")}
     </div>`;
+
+  document.getElementById("overview-card-reports")?.addEventListener("click", () => switchTab("reports"));
 }
 
 // ---------------------------------------------------------------------------
@@ -1258,34 +1264,179 @@ function auditRowsHtml(row) {
 }
 
 // ---------------------------------------------------------------------------
+// 8b) Sorun Bildirimleri (kullanıcıların profil sayfasından gönderdiği
+// hata/eksik konu/eksik soru/vb. bildirimleri)
+// ---------------------------------------------------------------------------
+
+const reportsState = { list: [], filterStatus: "", expanded: new Set() };
+
+async function renderReportsTab(root) {
+  root.innerHTML = skeletonRows(5, "h-28");
+  const { data, error } = await supabase
+    .from("user_reports")
+    .select("*, profiles(full_name, email), subjects(name), topics(name), questions(question_text)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    toast(error.message, "error");
+    root.innerHTML = `<div class="card p-8 text-center text-slate-500">Sorun bildirimleri yüklenemedi.</div>`;
+    return;
+  }
+  reportsState.list = data || [];
+  drawReportsTab(root);
+}
+
+function reportContextHtml(r) {
+  const parts = [];
+  if (r.subjects?.name) parts.push(`📘 ${escapeHtml(r.subjects.name)}`);
+  if (r.topics?.name) parts.push(`📄 ${escapeHtml(r.topics.name)}`);
+  if (r.questions?.question_text) parts.push(`❓ ${escapeHtml(r.questions.question_text.slice(0, 60))}${r.questions.question_text.length > 60 ? "…" : ""}`);
+  if (r.page_context) parts.push(`🔗 ${escapeHtml(r.page_context)}`);
+  if (!parts.length) return "";
+  return `<p class="text-xs text-slate-400 mt-2">${parts.join(" · ")}</p>`;
+}
+
+function drawReportsTab(root) {
+  const filtered = reportsState.filterStatus
+    ? reportsState.list.filter((r) => r.status === reportsState.filterStatus)
+    : reportsState.list;
+
+  const openCount = reportsState.list.filter((r) => r.status === "acik" || r.status === "inceleniyor").length;
+
+  root.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h2 class="text-lg font-bold text-slate-900">Sorun Bildirimleri (${reportsState.list.length}) ${openCount ? `<span class="text-sm font-semibold text-rose-600 ml-1">· ${openCount} açık</span>` : ""}</h2>
+      <select id="report-filter" class="input w-52">
+        <option value="">Tüm Durumlar</option>
+        ${optionsHtml(REPORT_STATUS_LABELS, reportsState.filterStatus)}
+      </select>
+    </div>
+    <div class="space-y-3">
+      ${filtered.map((r) => reportCardHtml(r)).join("") || `<div class="card p-8 text-center text-slate-500">Bu filtreye uyan bildirim yok.</div>`}
+    </div>`;
+
+  document.getElementById("report-filter").addEventListener("change", (ev) => {
+    reportsState.filterStatus = ev.target.value;
+    drawReportsTab(root);
+  });
+
+  reportsState.list.forEach((r) => {
+    document.getElementById(`report-toggle-${r.id}`)?.addEventListener("click", () => {
+      if (reportsState.expanded.has(r.id)) reportsState.expanded.delete(r.id);
+      else reportsState.expanded.add(r.id);
+      drawReportsTab(root);
+    });
+    if (reportsState.expanded.has(r.id)) {
+      document.getElementById(`report-form-${r.id}`)?.addEventListener("submit", (ev) => handleReportSave(ev, r, root));
+    }
+  });
+}
+
+function reportCardHtml(r) {
+  const isExpanded = reportsState.expanded.has(r.id);
+  const statusColor = REPORT_STATUS_COLORS[r.status] || "#64748b";
+  return `
+    <div class="card p-5 fadeIn">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <span class="badge bg-teal-50 text-teal-700">${escapeHtml(REPORT_TYPE_LABELS[r.report_type] || r.report_type)}</span>
+          ${badge(REPORT_STATUS_LABELS[r.status] || r.status, statusColor)}
+          <p class="text-xs text-slate-400 mt-1.5">${escapeHtml(r.profiles?.full_name || "İsimsiz")} · ${escapeHtml(r.profiles?.email || "—")} · ${timeAgo(r.created_at)}</p>
+          <p class="text-sm text-slate-700 mt-2 whitespace-pre-line">${escapeHtml(r.message)}</p>
+          ${reportContextHtml(r)}
+          ${r.admin_note ? `<p class="text-xs text-slate-500 mt-2 bg-slate-50 rounded-lg p-2"><strong>Admin notu:</strong> ${escapeHtml(r.admin_note)}</p>` : ""}
+        </div>
+        <button id="report-toggle-${r.id}" class="btn-secondary px-3 py-1.5 text-xs shrink-0">${isExpanded ? "Kapat" : "Yanıtla"}</button>
+      </div>
+      ${isExpanded ? reportEditFormHtml(r) : ""}
+    </div>`;
+}
+
+function reportEditFormHtml(r) {
+  return `
+    <form id="report-form-${r.id}" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+      <label class="text-xs text-slate-500">Durum
+        <select name="status" class="input mt-1">${optionsHtml(REPORT_STATUS_LABELS, r.status)}</select>
+      </label>
+      <label class="text-xs text-slate-500">Admin Notu
+        <textarea name="admin_note" class="input mt-1" rows="2" placeholder="Kullanıcıya/kayda düşülecek not (opsiyonel)">${escapeHtml(r.admin_note || "")}</textarea>
+      </label>
+      <button type="submit" class="btn-primary px-4 py-2 text-sm">Kaydet</button>
+    </form>`;
+}
+
+async function handleReportSave(ev, original, root) {
+  ev.preventDefault();
+  const fd = new FormData(ev.target);
+  const submitBtn = ev.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  const { error } = await supabase
+    .from("user_reports")
+    .update({ status: fd.get("status"), admin_note: fd.get("admin_note") || null })
+    .eq("id", original.id);
+  submitBtn.disabled = false;
+  if (error) {
+    toast(error.message, "error");
+    return;
+  }
+  toast("Bildirim güncellendi.", "success");
+  reportsState.expanded.delete(original.id);
+  await renderReportsTab(root);
+}
+
+// ---------------------------------------------------------------------------
 // 9) Öğrenciler
 // ---------------------------------------------------------------------------
 
 const studentsState = { list: [], search: "" };
 
+// "Aktif" sayılmak için son giriş bu kadar gün içinde olmalı — kesin bir
+// oturum/heartbeat takibimiz olmadığından en pratik yaklaşım bu (Supabase
+// auth.users.last_sign_in_at her başarılı girişte güncellenir).
+const ACTIVE_WITHIN_DAYS = 14;
+
+function isRecentlyActive(lastSignInAt) {
+  if (!lastSignInAt) return false;
+  const diffMs = Date.now() - new Date(lastSignInAt).getTime();
+  return diffMs <= ACTIVE_WITHIN_DAYS * 24 * 60 * 60 * 1000;
+}
+
 async function renderStudentsTab(root) {
   root.innerHTML = skeletonRows(6, "h-12");
-  const { data: students, error: sErr } = await supabase.from("students").select("*, profiles(full_name, email)");
-  if (sErr) {
-    toast(sErr.message, "error");
+  // admin_list_users(): TÜM kayıtlı kullanıcıları (sadece students tablosuna
+  // düşenleri değil) auth.users ile join'leyip son giriş/e-posta doğrulama
+  // bilgisiyle döner — "kimler giriş yaptı, kimler aktif" sorusuna cevap verir.
+  const { data: users, error: uErr } = await supabase.rpc("admin_list_users");
+  if (uErr) {
+    toast(uErr.message, "error");
     root.innerHTML = `<div class="card p-8 text-center text-slate-500">Öğrenciler yüklenemedi.</div>`;
     return;
   }
-  const userIds = (students || []).map((s) => s.user_id).filter(Boolean);
+  const userIds = (users || []).map((u) => u.id).filter(Boolean);
   let gamiByUser = new Map();
+  let targetScoreByUser = new Map();
   if (userIds.length) {
-    const { data: gami, error: gErr } = await supabase.from("user_gamification").select("user_id, current_streak, xp").in("user_id", userIds);
+    const [{ data: gami, error: gErr }, { data: students, error: sErr }] = await Promise.all([
+      supabase.from("user_gamification").select("user_id, current_streak, xp").in("user_id", userIds),
+      supabase.from("students").select("user_id, target_score").in("user_id", userIds),
+    ]);
     if (gErr) toast(gErr.message, "error");
+    if (sErr) toast(sErr.message, "error");
     gamiByUser = new Map((gami || []).map((g) => [g.user_id, g]));
+    targetScoreByUser = new Map((students || []).map((s) => [s.user_id, s.target_score]));
   }
-  studentsState.list = (students || []).map((s) => ({ ...s, gami: gamiByUser.get(s.user_id) }));
+  studentsState.list = (users || []).map((u) => ({
+    ...u,
+    gami: gamiByUser.get(u.id),
+    target_score: targetScoreByUser.get(u.id) ?? null,
+  }));
   drawStudentsTab(root);
 }
 
 function drawStudentsTab(root) {
   const q = studentsState.search.trim().toLowerCase();
   const filtered = q
-    ? studentsState.list.filter((s) => (s.profiles?.full_name || "").toLowerCase().includes(q) || (s.profiles?.email || "").toLowerCase().includes(q))
+    ? studentsState.list.filter((u) => (u.full_name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q))
     : studentsState.list;
 
   root.innerHTML = `
@@ -1304,19 +1455,23 @@ function drawStudentsTab(root) {
             <th class="text-left px-4 py-2">Onboarding</th>
             <th class="text-left px-4 py-2">Seri</th>
             <th class="text-left px-4 py-2">XP</th>
+            <th class="text-left px-4 py-2">Son Giriş</th>
+            <th class="text-left px-4 py-2">Durum</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          ${filtered.map((s) => `
+          ${filtered.map((u) => `
             <tr>
-              <td class="px-4 py-2 font-medium text-slate-700">${escapeHtml(s.profiles?.full_name || "İsimsiz")}</td>
-              <td class="px-4 py-2 text-slate-500">${escapeHtml(s.profiles?.email || "—")}</td>
-              <td class="px-4 py-2">${s.exam_type ? badge(EXAM_TYPE_LABELS[s.exam_type] || s.exam_type, "#14b8a6") : "—"}</td>
-              <td class="px-4 py-2 text-slate-500">${s.target_score ?? "—"}</td>
-              <td class="px-4 py-2">${s.onboarding_completed ? badge("Tamamlandı", "#059669") : badge("Devam ediyor", "#d97706")}</td>
-              <td class="px-4 py-2 text-slate-500">🔥 ${s.gami?.current_streak ?? 0}</td>
-              <td class="px-4 py-2 text-slate-500">✨ ${s.gami?.xp ?? 0}</td>
-            </tr>`).join("") || `<tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Sonuç bulunamadı.</td></tr>`}
+              <td class="px-4 py-2 font-medium text-slate-700">${escapeHtml(u.full_name || "İsimsiz")}</td>
+              <td class="px-4 py-2 text-slate-500">${escapeHtml(u.email || "—")} ${!u.email_confirmed_at ? `<span class="text-amber-500" title="E-posta doğrulanmamış">⚠️</span>` : ""}</td>
+              <td class="px-4 py-2">${u.exam_type ? badge(EXAM_TYPE_LABELS[u.exam_type] || u.exam_type, "#14b8a6") : "—"}</td>
+              <td class="px-4 py-2 text-slate-500">${u.target_score ?? "—"}</td>
+              <td class="px-4 py-2">${u.onboarding_completed ? badge("Tamamlandı", "#059669") : badge("Devam ediyor", "#d97706")}</td>
+              <td class="px-4 py-2 text-slate-500">🔥 ${u.gami?.current_streak ?? 0}</td>
+              <td class="px-4 py-2 text-slate-500">✨ ${u.gami?.xp ?? 0}</td>
+              <td class="px-4 py-2 text-slate-500 whitespace-nowrap">${u.last_sign_in_at ? timeAgo(u.last_sign_in_at) : "Hiç giriş yapmadı"}</td>
+              <td class="px-4 py-2">${isRecentlyActive(u.last_sign_in_at) ? badge("Aktif", "#059669") : badge("Pasif", "#94a3b8")}</td>
+            </tr>`).join("") || `<tr><td colspan="9" class="px-4 py-6 text-center text-slate-400">Sonuç bulunamadı.</td></tr>`}
         </tbody>
       </table>
     </div>`;
@@ -1413,6 +1568,7 @@ const RENDERERS = {
   aiqueue: renderAiQueueTab,
   sync: renderSyncTab,
   audit: renderAuditTab,
+  reports: renderReportsTab,
   students: renderStudentsTab,
   notify: renderNotifyTab,
 };
